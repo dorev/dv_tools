@@ -1,7 +1,7 @@
-
 #ifndef DV_LOG_FILE_H
 #define DV_LOG_FILE_H
 
+//@START@
 class logger
 {
 public:
@@ -61,4 +61,5 @@ string  logger::_log_file_path      = "";
 bool    logger::_is_init            = false;
 int     logger::_log_file_handle    = INVALID_HANDLE;
 
+//@END@
 #endif // DV_LOG_FILE_H
