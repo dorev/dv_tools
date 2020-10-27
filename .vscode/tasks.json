@@ -7,7 +7,7 @@
         {
             "label": "build",
             "dependsOn" : [
-                "compile MT4",
+                "MT4",
             ],
             "group": {
                 "kind": "build",
@@ -15,14 +15,9 @@
             }
         },
         {
-            "label": "compile MT4",
+            "label": "MT4",
             "type": "shell",
-            "command": "del ${workspaceRoot}\\dv_tests.log & ${workspaceRoot}\\metaeditor.exe /compile:${workspaceRoot}\\dv_tests.mq4 /s /log & type ${workspaceRoot}\\dv_tests.log",
-        },
-        {
-            "label": "compile MT5",
-            "type": "shell",
-            "command": "del ${workspaceRoot}\\dv_tests.log & \"C:\\Program Files\\MetaTrader\\metaeditor64.exe\" /compile:${workspaceRoot}\\dv_tests.mq4 /s /log & type ${workspaceRoot}\\dv_tests.log",
-        },
+            "command": "del ${workspaceRoot}\\dv_tests.log & ${workspaceRoot}\\bin\\metaeditor.exe /compile:${workspaceRoot}\\dv_tests.mq4 /s /log & type ${workspaceRoot}\\dv_tests.log",
+        }
     ]
 }

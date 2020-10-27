@@ -1,3 +1,6 @@
+///////////////////////////////////////////////////////////////////////////////
+// dv_config.mqh
+
 // Trades config
 #define DV_MAX_PIP_SLIPPAGE             5
 
@@ -34,6 +37,9 @@
 
 // Base reserve of all container at init
 #define DV_DEFAULT_CONTAINER_RESERVE    16
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_logger.mqh
 
 class logger
 {
@@ -93,6 +99,9 @@ private:
 string  logger::_log_file_path      = "";
 bool    logger::_is_init            = false;
 int     logger::_log_file_handle    = INVALID_HANDLE;
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_common.mqh
 
 #ifdef __MQL5__
 #define Bid SymbolInfoDouble(_Symbol, SYMBOL_BID)
@@ -259,6 +268,9 @@ void safe_delete_array(CLASS_TYPE* object)
         object = NULL;
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_vector.mqh
 
 template <typename VALUE_TYPE>
 class vector
@@ -556,6 +568,9 @@ private:
     int _capacity;
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// dv_map.mqh
+
 template <typename KEY_TYPE, typename VALUE_TYPE>
 class map
 {
@@ -756,6 +771,9 @@ private:
     vector<VALUE_TYPE> _values;
 
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_class_vector.mqh
 
 // objects held by this vector MUST implement a copy-constructor
 
@@ -1033,6 +1051,9 @@ private:
     int _capacity;
 
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_class_map.mqh
 
 template <typename KEY_TYPE, typename CLASS_TYPE>
 class class_map
@@ -1445,6 +1466,9 @@ private:
     vector<KEY_TYPE> _keys;
     class_vector<CLASS_TYPE> _values;
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_ui_manager.mqh
 
 class ui_label
 {
@@ -2529,6 +2553,9 @@ int dv_col(int x)
 {
     return ui_manager::col(x);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_order_book.mqh
 
 #ifdef __MQL4__ // order and order_book not implemented for MT5
 
