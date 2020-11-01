@@ -3,6 +3,9 @@
 
 // Trades config
 #define DV_MAX_PIP_SLIPPAGE             5
+#define DV_MAX_ORDER_SEND_RETRY         3
+#define DV_DEFAULT_TAKEPROFIT           30
+#define DV_DEFAULT_STOPLOSS             15
 
 // Log level (comment to disable)
 //#define DV_LOG_DEBUG
@@ -228,13 +231,13 @@ bool equals(VALUE_TYPE lhs, VALUE_TYPE rhs)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Utility macros
+
 #define DV_TIME_ZERO D'01.01.1970'
 #define UI_TICK _t_
 string  _discard_s_ = "";
 #define DISCARD_S(x) _discard_s_  = x;
 int     _discard_i_ = 0;
 #define DISCARD_I(x) _discard_i_  = x;
-
 bool    _discard_b_ = false;
 #define DISCARD_B(x) _discard_b_  = x;
 
@@ -2559,19 +2562,19 @@ int dv_col(int x)
 
 #ifdef __MQL4__ // order and order_book not implemented for MT5
 
-class order
+class order_t
 {
 public:
 
     // Default constructor
-    order(int ticket = NULL) : _ticket(ticket)
+    order_t(int ticket = NULL) : _ticket(ticket)
     {
-        DEBUG("order constructed with ticket " + (ticket == NULL ? "NULL" : ticket))
+        DEBUG("order_t constructed with ticket " + (ticket == NULL ? "NULL" : ticket))
         update();
     }
 
     // Copy constructor
-    order(const order& other)
+    order_t(const order_t& other)
         : _ticket(other.get_ticket())
         , _symbol(other.get_symbol())
         , _magic_number(other.get_magic_number())
@@ -2585,13 +2588,13 @@ public:
         , _stop_loss(other.get_stop_loss())
         , _profit(other.get_profit())
     {
-        DEBUG("order copy constructor")
+        DEBUG("order_t copy constructor")
     }
 
     // Update all order values
     bool update()
     {
-        DEBUG("order::update on order " + _ticket)
+        DEBUG("order_t::update on order " + _ticket)
 
         if(_ticket == NULL)
         {
@@ -2672,8 +2675,85 @@ public:
             return OrderCloseTime() > 0;
         }
 
-        ERROR("Unable to select a ticket in order::is:open()")
+        ERROR("Unable to select a ticket in order_t::is:open()")
         return false;
+    }
+
+    static string type_to_string(int op_type)
+    {
+        switch(op_type)
+        {
+            case OP_BUY        : return "buy";
+            case OP_BUYLIMIT   : return "buy limit";
+            case OP_BUYSTOP    : return "buy stop";
+            case OP_SELL       : return "sell";
+            case OP_SELLLIMIT  : return "sell limit";
+            case OP_SELLSTOP   : return "sell stop";
+            default:
+                ERROR("Evalutating an invalid order type")
+                return "invalid order type";
+        }
+    }
+
+    static int open(int op_type, double lots, double price, double takeprofit = NULL, double stoploss = NULL, string comment = "", double slippage = NULL)
+    {
+        if(takeprofit == NULL)
+        {
+            takeprofit = DV_DEFAULT_TAKEPROFIT * Pip;
+        }
+
+        if(stoploss == NULL)
+        {
+            stoploss = DV_DEFAULT_STOPLOSS * Pip;
+        }
+
+        if(slippage == NULL)
+        {
+            slippage = DV_MAX_PIP_SLIPPAGE * Pip;
+        }
+
+        int send_attempts = DV_MAX_ORDER_SEND_RETRY;
+        int ticket = -1;
+
+        while((bool)send_attempts--)
+        {
+            RefreshRates();
+
+            ticket = OrderSend(
+                _Symbol,
+                op_type,
+                lots,
+                price,
+                slippage,
+                stoploss,
+                takeprofit,
+                comment,
+                MagicNumber,
+                0,
+                clrAzure
+            );
+
+            if(ticket < 0 && send_attempts > 0)
+            {
+                WARNING("Unable to send " + type_to_string(op_type) + " order, retrying...")
+                Sleep(100);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if(ticket > 0)
+        {
+            INFO("Opened new " + type_to_string(op_type) + " order " + ticket)
+        }
+        else
+        {
+            ERROR("Failed to open " + type_to_string(op_type) + " order")
+        }
+
+        return ticket;
     }
 
     inline int         get_ticket()       const { return _ticket; }
@@ -2759,7 +2839,7 @@ public:
 
         // Working variables
         int ticket = 0;
-        order* order_ref = NULL;
+        order_t* order_ref = NULL;
 
         // Scan all open trades and history to validate/update the current content
         FOR_TRADES
@@ -2806,7 +2886,7 @@ public:
                 else
                 {
                     // Add "old" tickets to archive at least to map them
-                    if(order::is_closed(ticket))
+                    if(order_t::is_closed(ticket))
                     {
                         _archived.push(ticket);
                         WARNING("Unknown closed order added to order_book archive")
@@ -2826,7 +2906,7 @@ public:
         {
             ticket = opened_tickets.get(i);
 
-            if(order::is_closed(ticket))
+            if(order_t::is_closed(ticket))
             {
                 DEBUG("Detected new closed order " + ticket)
                 
@@ -2847,25 +2927,6 @@ public:
             }
         }
     }
-    
-    bool open_order(int op_type, double lots, double price, double stoploss, double takeprofit, double slippage)
-    {
-        int ticket = OrderSend(
-            _Symbol,
-            op_type,
-            lots,
-            price,
-            slippage,
-            stoploss,
-            takeprofit,
-            "",
-            MagicNumber,
-            0,
-            clrAzure
-        );
-        
-        return ticket != -1;
-    }
 
     void close_all()
     {
@@ -2873,14 +2934,14 @@ public:
 
         refresh();
 
-        order* order_ = NULL;
+        order_t* order = NULL;
         vector<int>* keys = _opened.get_keys_ref();
 
         for(int i = 0; i < keys.size(); ++i)
         {
-            if(_opened.access(keys.get(i), order_))
+            if(_opened.access(keys.get(i), order))
             {
-                order_.close();
+                order.close();
             }
         }
 
@@ -2893,14 +2954,14 @@ public:
 
         refresh();
 
-        order* order_ = NULL;
+        order_t* order = NULL;
         vector<int>* keys = _opened.get_keys_ref();
 
         for(int i = 0; i < keys.size(); ++i)
         {
-            if(!order_.is(ticket) && _opened.access(keys.get(i), order_))
+            if(!order.is(ticket) && _opened.access(keys.get(i), order))
             {
-                order_.close();
+                order.close();
             }
         }
 
@@ -2909,7 +2970,7 @@ public:
 
     // Returns true if there is a newly closed order
     // and sets the function parameter with its reference
-    bool get_new_closed_order_ref(order*& output)
+    bool access_new_closed(order_t*& output)
     { 
         if(!_track_history)
         {
@@ -2930,7 +2991,21 @@ public:
         DEBUG("order_book::new_closed_orders found no new closed order")
         return false;
     }
-    
+
+    class_map<int, order_t>* get_opened_orders_map_ref()
+    {
+        DEBUG("order_book::get_opened_orders_map_ref")
+        refresh();
+        return &_opened;
+    }
+
+    class_map<int, order_t>* get_closed_orders_map_ref()
+    {
+        DEBUG("order_book::get_closed_orders_map_ref")
+        refresh();
+        return &_closed;
+    }
+
     void archive(int ticket)
     {
         if(!_track_history)
@@ -3031,13 +3106,13 @@ private:
     {
         INFO("Adding order " + ticket)
 
-        if(!order::exists(ticket))
+        if(!order_t::exists(ticket))
         {
             WARNING("Attempt to add a non-existent ticket prevented")
             return false;
         }
 
-        if(_track_history && order::is_closed(ticket))
+        if(_track_history && order_t::is_closed(ticket))
         {
             DEBUG("Adding order " + ticket + " to closed orders")
             _closed.emplace(ticket, ticket);
@@ -3058,8 +3133,8 @@ private:
     bool    _track_history;
     vector<int> _new_closed;
     vector<int> _archived;
-    class_map<int, order> _opened;
-    class_map<int, order> _closed;
+    class_map<int, order_t> _opened;
+    class_map<int, order_t> _closed;
 };
 
 #endif // __MQL4__
