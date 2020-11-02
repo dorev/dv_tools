@@ -4,7 +4,7 @@
 #define DV_MAJOR 0
 #define DV_MINOR 0
 #define DV_PATCH 0
-#define DV_BUILD 5
+#define DV_BUILD 213
 
 string dv_version()
 {
@@ -16,6 +16,10 @@ string dv_version()
 
 ///////////////////////////////////////////////////////////////////////////////
 // dv_config.mqh
+
+// Naming
+#define DV_EA_NAME                      "Unnamed"
+#define DV_EA_VERSION                   "0.0.0.0"
 
 // Trades config
 #define DV_MAX_PIP_SLIPPAGE             5
@@ -130,19 +134,20 @@ int     logger::_log_file_handle    = INVALID_HANDLE;
 ///////////////////////////////////////////////////////////////////////////////
 // Magic number (used with macro below)
 
-int SymbolStamp()
+int scramble(string input_string)
 {
-    string symbol = Symbol();
-    string stamp = "";
-    for(int i = 0; i < StringLen(symbol); ++i)
+    int result = 1;
+    for(int i = 0; i < StringLen(input_string); ++i)
     {
-        stamp += IntegerToString(StringGetCharacter(symbol, i) - 32);
+        result *= (int)StringGetCharacter(input_string, i) - 31;
     }
 
-    return (int)StringToInteger(stamp);
+    return result;
 }
 
-const int MagicNumber = MathAbs((TimeCurrent() << 16) | SymbolStamp());
+const int MagicNumber = MathAbs((scramble(_Symbol)    << 16) |
+                                (scramble(DV_EA_NAME) <<  8) |
+                                (scramble(DV_EA_VERSION)));
 
 ///////////////////////////////////////////////////////////////////////////////
 // Pip adjustment
@@ -170,13 +175,13 @@ const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
 
 #ifdef DV_LOG_DEBUG
     #ifdef DV_LOG_FILE_DEBUG
-        #define DEBUG(x) Print(DV_DEBUG_TAG + " : " + x); LOG_TO_FILE(DV_DEBUG_TAG, x)
+        #define DEBUG(x) Print(DV_DEBUG_TAG + " : " + x); LOG_TO_FILE(DV_DEBUG_TAG, x + FILE_AND_LINE)
     #else
         #define DEBUG(x) Print(DV_DEBUG_TAG + " : " + x);
     #endif
 #else
     #ifdef DV_LOG_FILE_DEBUG
-        #define DEBUG(x) LOG_TO_FILE(DV_DEBUG_TAG, x)
+        #define DEBUG(x) LOG_TO_FILE(DV_DEBUG_TAG, x + FILE_AND_LINE)
     #else
         #define DEBUG(x)
     #endif
@@ -184,13 +189,13 @@ const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
 
 #ifdef DV_LOG_INFO
     #ifdef DV_LOG_FILE_INFO
-        #define INFO(x) Print(DV_INFO_TAG + " : " + x); LOG_TO_FILE(DV_INFO_TAG, x)
+        #define INFO(x) Print(DV_INFO_TAG + " : " + x); LOG_TO_FILE(DV_INFO_TAG, x + FILE_AND_LINE)
     #else
         #define INFO(x) Print(DV_INFO_TAG + " : " + x);
     #endif
 #else
     #ifdef DV_LOG_FILE_INFO
-        #define INFO(x) LOG_TO_FILE(DV_INFO_TAG, x)
+        #define INFO(x) LOG_TO_FILE(DV_INFO_TAG, x + FILE_AND_LINE)
     #else
         #define INFO(x)
     #endif
@@ -259,8 +264,8 @@ bool    _discard_b_ = false;
 
 // Convenience macro to iterate over orders
 int __order__ = 0;
-#define FOR_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES) || MagicNumber == OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
-#define FOR_HISTORY for(__order__ = OrdersHistoryTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_HISTORY) || MagicNumber == OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
+#define FOR_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
+#define FOR_HISTORY for(__order__ = OrdersHistoryTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_HISTORY) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
 #define ORDER_INDEX __order__
 #define FOR_TRADES_END }
 #define FOR_HISTORY_END }
@@ -543,6 +548,7 @@ public:
 
     // Utilities //////////////////////////////////////////////////////////////
 
+    // Returns the index of a given value, -1 if not found
     int find(VALUE_TYPE value) const
     {
         for(int i = 0; i < _size; ++i)
@@ -1106,7 +1112,7 @@ public:
     // Sets the requested key to the specified value
     class_map<KEY_TYPE, CLASS_TYPE>* set(KEY_TYPE key, const CLASS_TYPE& value)
     {
-        DEBUG("class_map::set")
+        DEBUG("class_map::set for key " + key)
 
         int index = _keys.find(key);
 
@@ -1128,7 +1134,7 @@ public:
 
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key)
     {
-        DEBUG("class_map::emplace with default constructor")
+        DEBUG("class_map::emplace with default constructor for key " + key)
 
         int index = _keys.find(key);
 
@@ -1153,7 +1159,7 @@ public:
     template <typename ARG1>
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1)
     {
-        DEBUG("class_map::emplace with 1 argument")
+        DEBUG("class_map::emplace with 1 argument for key " + key)
 
         int index = _keys.find(key);
 
@@ -1178,7 +1184,7 @@ public:
     template <typename ARG1, typename ARG2>
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2)
     {
-        DEBUG("class_map::emplace with 2 arguments")
+        DEBUG("class_map::emplace with 2 arguments for key " + key)
 
         int index = _keys.find(key);
 
@@ -1203,7 +1209,7 @@ public:
     template <typename ARG1, typename ARG2, typename ARG3>
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3)
     {
-        DEBUG("class_map::emplace with 3 arguments")
+        DEBUG("class_map::emplace with 3 arguments for key " + key)
 
         int index = _keys.find(key);
 
@@ -1228,7 +1234,7 @@ public:
     template <typename ARG1, typename ARG2, typename ARG3, typename ARG4>
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4)
     {
-        DEBUG("class_map::emplace with 4 arguments")
+        DEBUG("class_map::emplace with 4 arguments for key " + key)
 
         int index = _keys.find(key);
 
@@ -1253,7 +1259,7 @@ public:
     template <typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5>
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5)
     {
-        DEBUG("class_map::emplace with 5 arguments")
+        DEBUG("class_map::emplace with 5 arguments for key " + key)
 
         int index = _keys.find(key);
 
@@ -1277,7 +1283,7 @@ public:
     template <typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6>
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6)
     {
-        DEBUG("class_map::emplace with 6 arguments")
+        DEBUG("class_map::emplace with 6 arguments for key " + key)
 
         int index = _keys.find(key);
 
@@ -1301,7 +1307,7 @@ public:
     template <typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6, typename ARG7>
     class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6, ARG7 arg7)
     {
-        DEBUG("class_map::emplace with 7 arguments")
+        DEBUG("class_map::emplace with 7 arguments for key " + key)
 
         int index = _keys.find(key);
 
@@ -1324,17 +1330,17 @@ public:
 
     bool access(KEY_TYPE key, CLASS_TYPE*& output)
     {
-        DEBUG("class_map::access")
+        DEBUG("class_map::access on key " + key)
 
         const int index = _keys.find(key);
 
         if(index < 0)
         {
-            DEBUG("class_map::access return false")
+            DEBUG("class_map::access return false for key " + key)
             return false;
         }
 
-        DEBUG("class_map::access return true")
+        DEBUG("class_map::access return true for key " + key)
         output = _values.get_ref(index);
         return true;
     }
@@ -1342,7 +1348,7 @@ public:
     // Returns the value of a requested key passed by value
     CLASS_TYPE* get_ref(const KEY_TYPE key)
     {
-        DEBUG("class_map::get_ref with copied argument")
+        DEBUG("class_map::get_ref with copied argument on key " + key)
 
         const int index = _keys.find(key);
 
@@ -1379,7 +1385,7 @@ public:
     // Returns the list of current keys, useful for iterating!
     vector<KEY_TYPE>* get_keys_ref()
     {
-        DEBUG("class_map::get_keys with return by reference")
+        DEBUG("class_map::get_keys_ref with return by reference")
         return &_keys;
     }
 
@@ -2618,7 +2624,7 @@ public:
             return false;
         }
 
-        if(OrderSelect(_ticket, SELECT_BY_TICKET))
+        if(!OrderSelect(_ticket, SELECT_BY_TICKET))
         {
             ERROR("Unable to find ticket " + _ticket)
             return false;
@@ -2694,6 +2700,11 @@ public:
         ERROR("Unable to select a ticket in order_t::is:open()")
         return false;
     }
+    
+    bool is_closed()
+    {
+        return is_closed(_ticket);
+    }
 
     static string type_to_string(int op_type)
     {
@@ -2713,14 +2724,17 @@ public:
 
     static int open(int op_type, double lots, double price, double takeprofit = NULL, double stoploss = NULL, string comment = "", double slippage = NULL)
     {
+        bool is_sell = (bool)(op_type & 1);
+        double pip_with_sign = is_sell ? -1 * Pip : Pip;
+        
         if(takeprofit == NULL)
         {
-            takeprofit = DV_DEFAULT_TAKEPROFIT * Pip;
+            takeprofit = price + (DV_DEFAULT_TAKEPROFIT * pip_with_sign);
         }
 
         if(stoploss == NULL)
         {
-            stoploss = DV_DEFAULT_STOPLOSS * Pip;
+            stoploss = price - (DV_DEFAULT_STOPLOSS * pip_with_sign);
         }
 
         if(slippage == NULL)
@@ -2730,11 +2744,12 @@ public:
 
         int send_attempts = DV_MAX_ORDER_SEND_RETRY;
         int ticket = -1;
+        
+        DEBUG("Sending " + type_to_string(op_type) + " order : " + lots + " lots - " + price + " - TP " + takeprofit + " - SL " + stoploss + " - slippage " + slippage)
 
         while((bool)send_attempts--)
         {
-            RefreshRates();
-
+            ResetLastError();
             ticket = OrderSend(
                 _Symbol,
                 op_type,
@@ -2751,7 +2766,8 @@ public:
 
             if(ticket < 0 && send_attempts > 0)
             {
-                WARNING("Unable to send " + type_to_string(op_type) + " order, retrying...")
+                int error = GetLastError();
+                WARNING("Unable to send " + type_to_string(op_type) + " order (error " + error + ") retrying...")
                 Sleep(100);
             }
             else
@@ -2858,21 +2874,30 @@ public:
         order_t* order_ref = NULL;
 
         // Scan all open trades and history to validate/update the current content
-        FOR_TRADES
+        FOR_TRADES         
             ticket = OrderTicket();
+            DEBUG("order_book::refresh processing ticket " + ticket + "...")
 
             if(_opened.access(ticket, order_ref))
             {
+                DEBUG("order_book::refresh detected opened ticket " + ticket)
                 order_ref.update();
             }
             else if(_track_history && _closed.access(ticket, order_ref))
             {
-                WARNING("Unlikely detection of closed order")
+                WARNING("Unlikely detection of closed order " + ticket)
                 order_ref.update();
+                
+                if(!order_ref.is_closed())
+                {
+                    _opened.emplace(ticket, order_ref);
+                    _closed.erase(ticket);
+                }
             }
-            else if(_track_history && _archived.find(ticket))
+            else if(_track_history && _archived.find(ticket) >= 0)
             {
                 // do nothing
+                DEBUG("order_book::refresh discovered archived ticket " + ticket)
             }
             else
             {
@@ -2886,16 +2911,11 @@ public:
             FOR_HISTORY
                 ticket = OrderTicket();
 
-                if(_opened.access(ticket, order_ref))
-                {
-                    WARNING("Unlikely detection of opened order")
-                    order_ref.update();
-                }
-                else if(_closed.access(ticket, order_ref))
+                if(_closed.access(ticket, order_ref))
                 {
                     order_ref.update();
                 }
-                else if(_archived.find(ticket))
+                else if(_archived.find(ticket) >= 0)
                 {
                     // do nothing
                 }
@@ -2905,7 +2925,7 @@ public:
                     if(order_t::is_closed(ticket))
                     {
                         _archived.push(ticket);
-                        WARNING("Unknown closed order added to order_book archive")
+                        DEBUG("Untracked closed order added to order_book archive")
                     }
                     else
                     {
@@ -2942,6 +2962,12 @@ public:
                 }
             }
         }
+        
+        
+        DEBUG("order_book content : " + opened_orders_count()   + " opened - " 
+                                      + closed_orders_count()   + " closed - " 
+                                      + new_closed_orders()     + " new closed - " 
+                                      + archived_orders_count() + " archived")
     }
 
     void close_all()
@@ -2964,9 +2990,9 @@ public:
         refresh();
     }
 
-    void close_all_except(int ticket)
+    void close_all_except(int ticket_to_keep)
     {
-        INFO("Closing all orders except " + ticket)
+        INFO("Closing all orders except " + ticket_to_keep)
 
         refresh();
 
@@ -2975,8 +3001,11 @@ public:
 
         for(int i = 0; i < keys.size(); ++i)
         {
-            if(!order.is(ticket) && _opened.access(keys.get(i), order))
+            int current_ticket = keys.get(i);
+            
+            if(_opened.access(current_ticket, order) && !order.is(ticket_to_keep))
             {
+                INFO("Closing ticket " + current_ticket)
                 order.close();
             }
         }
@@ -3011,14 +3040,12 @@ public:
     class_map<int, order_t>* get_opened_orders_map_ref()
     {
         DEBUG("order_book::get_opened_orders_map_ref")
-        refresh();
         return &_opened;
     }
 
     class_map<int, order_t>* get_closed_orders_map_ref()
     {
         DEBUG("order_book::get_closed_orders_map_ref")
-        refresh();
         return &_closed;
     }
 
@@ -3074,6 +3101,7 @@ public:
         }
 
         _closed.clear();
+        _new_closed.clear();
     }
 
     void clear_archive()
