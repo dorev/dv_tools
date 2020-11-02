@@ -1,4 +1,6 @@
+# Files to concatenate
 $sources = @(
+    "dv_version.mqh"
     "dv_config.mqh"
     "dv_logger.mqh"
     "dv_common.mqh"
@@ -10,20 +12,39 @@ $sources = @(
     "dv_order_book.mqh"
 )
 
+$source_folder = ".\source"
+
+# Clear previous
 $output = "$PSScriptRoot\dv_tools.mqh"
 
 if (Test-Path "$output") 
 {
-    Write-Host "Old version of dv_tools.mqh removed"
+    Write-Host "Previous version of dv_tools.mqh removed"
     Remove-Item $output
 }
 
-$accept_lines = 0
+# Increment build in version header
+$build_number = 0
+$version_file = "$source_folder\dv_version.mqh"
+$build_line_regex = "#define DV_BUILD \d+"
 
+foreach($line in Get-Content $version_file)
+{
+    if($line -match $build_line_regex)
+    {
+        $build_number = [int]($line -replace "\D", "") + 1
+        break
+    }
+}
+
+(Get-Content $version_file) -replace $build_line_regex, "#define DV_BUILD $build_number" | Set-Content $version_file -Encoding UTF8
+
+# Scan sources for start/end tags and appends them in a single file
+$accept_lines = 0
 foreach ( $source in $sources )
 {
     Write-Host "Processing $source..."
-    $filepath = ".\source\$source"
+    $filepath = "$source_folder\$source"
 
     $line_counter = 0
     $total_lines = 0
