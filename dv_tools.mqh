@@ -4,7 +4,7 @@
 #define DV_MAJOR 0
 #define DV_MINOR 0
 #define DV_PATCH 0
-#define DV_BUILD 213
+#define DV_BUILD 216
 
 string dv_version()
 {
@@ -99,9 +99,9 @@ public:
         }
 
         FileSeek(_log_file_handle, 0, SEEK_END);
-        FileWriteString(_log_file_handle, tag + " : " + message + "\n");  
+        FileWriteString(_log_file_handle, tag + " : " + message + "\n");
     }
-    
+
     static string timestamp()
     {
         string timestamp = TimeToString(TimeLocal(), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "." + IntegerToString(GetMicrosecondCount());
@@ -1495,12 +1495,12 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 // dv_ui_manager.mqh
 
-class ui_label
+class label_t
 {
 public:
 
     // Default constructor
-    ui_label(
+    label_t(
         string id   = NULL,
         string text = "",
         int x       = 0,
@@ -1519,16 +1519,16 @@ public:
         , _pos_changed(true)
         , _style_changed(true)
     {
-        DEBUG("ui_label constructed " + (id == NULL ? "NULL" : _id))
+        DEBUG("label_t constructed " + (id == NULL ? "NULL" : _id))
 
         if(_id == NULL)
         {
-            ERROR("A ui_label was created with NULL id")
+            ERROR("A label_t was created with NULL id")
         }
     }
 
     // Copy constructor
-    ui_label(const ui_label& other)
+    label_t(const label_t& other)
         : _id(other.get_id())
         , _text(other.get_text())
         , _x(other.get_x())
@@ -1540,11 +1540,11 @@ public:
         , _pos_changed(true)
         , _style_changed(true)
     {
-        DEBUG("ui_label copy constructed " + _id)
+        DEBUG("label_t copy constructed " + _id)
 
         if(_id == NULL)
         {
-            ERROR("A ui_label was copy-constructed with NULL id")
+            ERROR("A label_t was copy-constructed with NULL id")
         }
     }
 
@@ -1568,9 +1568,9 @@ public:
 
     // Mutators
 
-    ui_label* set_text(string text)
+    label_t* set_text(string text)
     {
-        DEBUG("ui_label::set_text of " + _id + " with " + text)
+        DEBUG("label_t::set_text of " + _id + " with " + text)
 
         if(equals(_text, text) == false)
         {
@@ -1581,9 +1581,9 @@ public:
         return &this;
     }
 
-    ui_label* set_x(int x)
+    label_t* set_x(int x)
     {
-        DEBUG("ui_label::set_x of " + _id + " with " + x)
+        DEBUG("label_t::set_x of " + _id + " with " + x)
 
         if(equals(_x, x) == false)
         {
@@ -1594,9 +1594,9 @@ public:
         return &this;
     }
 
-    ui_label* set_y(int y)
+    label_t* set_y(int y)
     {
-        DEBUG("ui_label::set_y of " + _id + " with " + y)
+        DEBUG("label_t::set_y of " + _id + " with " + y)
 
         if(equals(_y, y) == false)
         {
@@ -1607,9 +1607,9 @@ public:
         return &this;
     }
 
-    ui_label* set_xy(int x, int y)
+    label_t* set_xy(int x, int y)
     {
-        DEBUG("ui_label::set_xy of " + _id + " with " + x + " - " + y)
+        DEBUG("label_t::set_xy of " + _id + " with " + x + " - " + y)
 
         set_x(x);
         set_y(y);
@@ -1617,9 +1617,9 @@ public:
         return &this;
     }
 
-    ui_label* set_color(color clr)
+    label_t* set_color(color clr)
     {
-        DEBUG("ui_label::set_color of " + _id + " with " + ColorToString(clr))
+        DEBUG("label_t::set_color of " + _id + " with " + ColorToString(clr))
 
         if(equals(_clr, clr) == false)
         {
@@ -1630,9 +1630,9 @@ public:
         return &this;
     }
 
-    ui_label* set_font(string font)
+    label_t* set_font(string font)
     {
-        DEBUG("ui_label::set_font of " + _id + " with " + font)
+        DEBUG("label_t::set_font of " + _id + " with " + font)
 
         if(equals(_font, font) == false)
         {
@@ -1643,9 +1643,9 @@ public:
         return &this;
     }
 
-    ui_label* set_size(int size)
+    label_t* set_size(int size)
     {
-        DEBUG("ui_label::set_size of " + _id + " with " + size)
+        DEBUG("label_t::set_size of " + _id + " with " + size)
 
         if(equals(_size, size) == false)
         {
@@ -1658,7 +1658,7 @@ public:
 
     void update()
     {
-        DEBUG("ui_label::update of " + _id)
+        DEBUG("label_t::update of " + _id)
 
         if(_text_changed && !ObjectSetString(0, _id, OBJPROP_TEXT, _text))
         {
@@ -1705,7 +1705,7 @@ private:
 
     void clear_flags()
     {
-        DEBUG("ui_label::clear_flags of " + _id)
+        DEBUG("label_t::clear_flags of " + _id)
 
         _text_changed  = false;
         _pos_changed   = false;
@@ -1729,12 +1729,12 @@ private:
 
 };
 
-class ui_hline
+class hline_t
 {
 public:
 
     // Default constructor
-    ui_hline(
+    hline_t(
         string id = NULL,
         double price = 0.0,
         color clr = DV_DEFAULT_LINE_COLOR,
@@ -1748,16 +1748,16 @@ public:
         , _price_changed(true)
         , _style_changed(true)
     {
-        DEBUG("ui_hline constructed " + (id == NULL ? "NULL" : _id))
+        DEBUG("hline_t constructed " + (id == NULL ? "NULL" : _id))
 
         if(_id == NULL)
         {
-            ERROR("A ui_hline was created with NULL id")
+            ERROR("A hline_t was created with NULL id")
         }
     }
 
     // Copy constructor
-    ui_hline(const ui_hline& other)
+    hline_t(const hline_t& other)
         : _id(other.get_id())
         , _price(other.get_price())
         , _clr(other.get_color())
@@ -1766,11 +1766,11 @@ public:
         , _price_changed(true)
         , _style_changed(true)
     {
-        DEBUG("ui_hline copy constructed " + _id)
+        DEBUG("hline_t copy constructed " + _id)
 
         if(_id == NULL)
         {
-            ERROR("A ui_hline was copy-constructed with NULL id")
+            ERROR("A hline_t was copy-constructed with NULL id")
         }
     }
 
@@ -1786,9 +1786,9 @@ public:
 
     // Mutators
 
-    ui_hline* set_price(double price)
+    hline_t* set_price(double price)
     {
-        DEBUG("ui_hline::price of " + _id + " with " + price)
+        DEBUG("hline_t::price of " + _id + " with " + price)
 
         if(equals(_price, price) == false)
         {
@@ -1799,9 +1799,9 @@ public:
         return &this;
     }
 
-    ui_hline* set_color(color clr)
+    hline_t* set_color(color clr)
     {
-        DEBUG("ui_hline::set_color of " + _id + " with " + ColorToString(clr))
+        DEBUG("hline_t::set_color of " + _id + " with " + ColorToString(clr))
 
         if(equals(_clr, clr) == false)
         {
@@ -1812,9 +1812,9 @@ public:
         return &this;
     }
 
-    ui_hline* set_style(int style)
+    hline_t* set_style(int style)
     {
-        DEBUG("ui_hline::set_style of " + _id + " with " + style)
+        DEBUG("hline_t::set_style of " + _id + " with " + style)
 
         if(equals(_style, style) == false)
         {
@@ -1825,9 +1825,9 @@ public:
         return &this;
     }
 
-    ui_hline* set_width(int width)
+    hline_t* set_width(int width)
     {
-        DEBUG("ui_hline::set_width of " + _id + " with " + width)
+        DEBUG("hline_t::set_width of " + _id + " with " + width)
 
         if(equals(_width, width) == false)
         {
@@ -1840,7 +1840,7 @@ public:
 
     void update()
     {
-        DEBUG("ui_hline::update of " + _id)
+        DEBUG("hline_t::update of " + _id)
 
         if(_price_changed && !ObjectMove(0, _id, 0, 0, _price))
         {
@@ -1876,7 +1876,7 @@ private:
 
     void clear_flags()
     {
-        DEBUG("ui_hline::clear_flags of " + _id)
+        DEBUG("hline_t::clear_flags of " + _id)
 
         _price_changed = false;
         _style_changed = false;
@@ -1894,12 +1894,12 @@ private:
     bool    _style_changed;
 };
 
-class ui_vline
+class vline_t
 {
 public:
 
     // Default constructor
-    ui_vline(
+    vline_t(
         string id = NULL,
         datetime time = DV_TIME_ZERO,
         color clr = DV_DEFAULT_LINE_COLOR,
@@ -1913,16 +1913,16 @@ public:
         , _time_changed(true)
         , _style_changed(true)
     {
-        DEBUG("ui_vline constructed " + (id == NULL ? "NULL" : _id))
+        DEBUG("vline_t constructed " + (id == NULL ? "NULL" : _id))
 
         if(_id == NULL)
         {
-            WARNING("A ui_vline was created with NULL id")
+            WARNING("A vline_t was created with NULL id")
         }
     }
 
     // Copy constructor
-    ui_vline(const ui_vline& other)
+    vline_t(const vline_t& other)
         : _id(other.get_id())
         , _time(other.get_time())
         , _clr(other.get_color())
@@ -1931,11 +1931,11 @@ public:
         , _time_changed(true)
         , _style_changed(true)
     {
-        DEBUG("ui_vline copy constructed " + _id)
+        DEBUG("vline_t copy constructed " + _id)
 
         if(_id == NULL)
         {
-            WARNING("A ui_vline was copy-constructed with NULL id")
+            WARNING("A vline_t was copy-constructed with NULL id")
         }
     }
 
@@ -1951,9 +1951,9 @@ public:
 
     // Mutators
 
-    ui_vline* set_time(datetime time)
+    vline_t* set_time(datetime time)
     {
-        DEBUG("ui_vline::set_time of " + _id + " with " + TimeToString(time))
+        DEBUG("vline_t::set_time of " + _id + " with " + TimeToString(time))
 
         if(equals(_time, time) == false)
         {
@@ -1964,9 +1964,9 @@ public:
         return &this;
     }
 
-    ui_vline* set_color(color clr)
+    vline_t* set_color(color clr)
     {
-        DEBUG("ui_vline::set_color of " + _id + " with " + ColorToString(clr))
+        DEBUG("vline_t::set_color of " + _id + " with " + ColorToString(clr))
 
         if(equals(_clr, clr) == false)
         {
@@ -1977,9 +1977,9 @@ public:
         return &this;
     }
 
-    ui_vline* set_style(int style)
+    vline_t* set_style(int style)
     {
-        DEBUG("ui_vline::set_style of " + _id + " with " + style)
+        DEBUG("vline_t::set_style of " + _id + " with " + style)
 
         if(equals(_style, style) == false)
         {
@@ -1990,9 +1990,9 @@ public:
         return &this;
     }
 
-    ui_vline* set_width(int width)
+    vline_t* set_width(int width)
     {
-        DEBUG("ui_vline::set_width of " + _id + " with " + width)
+        DEBUG("vline_t::set_width of " + _id + " with " + width)
 
         if(equals(_width, width) == false)
         {
@@ -2005,7 +2005,7 @@ public:
 
     void update()
     {
-        DEBUG("ui_vline::update of " + _id)
+        DEBUG("vline_t::update of " + _id)
 
         if(_time_changed && !ObjectMove(0, _id, 0, _time, 0))
         {
@@ -2041,7 +2041,7 @@ private:
 
     void clear_flags()
     {
-        DEBUG("ui_vline::clear_flags " + _id)
+        DEBUG("vline_t::clear_flags " + _id)
 
         _time_changed  = false;
         _style_changed = false;
@@ -2255,7 +2255,7 @@ public:
     {
         DEBUG("ui_namager::edit_label_text " + label_name)
 
-        ui_label* label = NULL;
+        label_t* label = NULL;
 
         if(_label_map.access(label_name, label))
         {
@@ -2274,7 +2274,7 @@ public:
     {
         DEBUG("ui_namager::move_label " + label_name)
 
-        ui_label* label = NULL;
+        label_t* label = NULL;
 
         if(_label_map.access(label_name, label))
         {
@@ -2293,7 +2293,7 @@ public:
     {
         DEBUG("ui_namager::edit_label_style " + label_name)
 
-        ui_label* label = NULL;
+        label_t* label = NULL;
 
         if(_label_map.access(label_name, label))
         {
@@ -2479,7 +2479,7 @@ public:
 
         for(i = 0; i < keys.size(); ++i)
         {
-            process<ui_label>(keys.get(i), _label_map);
+            process<label_t>(keys.get(i), _label_map);
         }
 
         // Check horizontal lines
@@ -2487,7 +2487,7 @@ public:
 
         for(i = 0; i < keys.size(); ++i)
         {
-            process<ui_hline>(keys.get(i), _hline_map);
+            process<hline_t>(keys.get(i), _hline_map);
         }
 
         // Check vertical lines
@@ -2495,7 +2495,7 @@ public:
 
         for(i = 0; i < keys.size(); ++i)
         {
-            process<ui_vline>(keys.get(i), _vline_map);
+            process<vline_t>(keys.get(i), _vline_map);
         }
 
         ChartRedraw();
@@ -2558,15 +2558,15 @@ private:
         }
     }
 
-    inline class_map<string, ui_label>* get_map_by_type(ui_label*) { return &_label_map; }
-    inline class_map<string, ui_hline>* get_map_by_type(ui_hline*) { return &_hline_map; }
-    inline class_map<string, ui_vline>* get_map_by_type(ui_vline*) { return &_vline_map; }
+    inline class_map<string, label_t>* get_map_by_type(label_t*) { return &_label_map; }
+    inline class_map<string, hline_t>* get_map_by_type(hline_t*) { return &_hline_map; }
+    inline class_map<string, vline_t>* get_map_by_type(vline_t*) { return &_vline_map; }
 
     // Members
 
-    class_map<string, ui_label> _label_map;
-    class_map<string, ui_hline> _hline_map;
-    class_map<string, ui_vline> _vline_map;
+    class_map<string, label_t> _label_map;
+    class_map<string, hline_t> _hline_map;
+    class_map<string, vline_t> _vline_map;
 };
 
 int dv_row(int y)
@@ -2675,7 +2675,7 @@ public:
         ERROR("Unable to close order " + _ticket)
         return false;
     }
-    
+
     inline bool is(int ticket) const
     {
         return ticket == _ticket;
@@ -2700,7 +2700,7 @@ public:
         ERROR("Unable to select a ticket in order_t::is:open()")
         return false;
     }
-    
+
     bool is_closed()
     {
         return is_closed(_ticket);
@@ -2726,7 +2726,7 @@ public:
     {
         bool is_sell = (bool)(op_type & 1);
         double pip_with_sign = is_sell ? -1 * Pip : Pip;
-        
+
         if(takeprofit == NULL)
         {
             takeprofit = price + (DV_DEFAULT_TAKEPROFIT * pip_with_sign);
@@ -2744,7 +2744,7 @@ public:
 
         int send_attempts = DV_MAX_ORDER_SEND_RETRY;
         int ticket = -1;
-        
+
         DEBUG("Sending " + type_to_string(op_type) + " order : " + lots + " lots - " + price + " - TP " + takeprofit + " - SL " + stoploss + " - slippage " + slippage)
 
         while((bool)send_attempts--)
@@ -2847,15 +2847,15 @@ public:
     {
         INFO("order_book created for " + _symbol + " with magic number " + _magic_number)
     }
-    
+
     // Tracking history enables to monitor closed orders and archived orders
     // If history is not tracked, _closed and _archived are always emptied
     void track_history(bool track_history)
     {
         DEBUG("order_book::track_history " + track_history)
-        
+
         _track_history = track_history;
-        
+
         if(!_track_history)
         {
             DEBUG("Clearing order_book history")
@@ -2874,7 +2874,7 @@ public:
         order_t* order_ref = NULL;
 
         // Scan all open trades and history to validate/update the current content
-        FOR_TRADES         
+        FOR_TRADES
             ticket = OrderTicket();
             DEBUG("order_book::refresh processing ticket " + ticket + "...")
 
@@ -2887,7 +2887,7 @@ public:
             {
                 WARNING("Unlikely detection of closed order " + ticket)
                 order_ref.update();
-                
+
                 if(!order_ref.is_closed())
                 {
                     _opened.emplace(ticket, order_ref);
@@ -2945,7 +2945,7 @@ public:
             if(order_t::is_closed(ticket))
             {
                 DEBUG("Detected new closed order " + ticket)
-                
+
                 if(_opened.access(ticket, order_ref))
                 {
                     if(_track_history)
@@ -2962,11 +2962,11 @@ public:
                 }
             }
         }
-        
-        
-        DEBUG("order_book content : " + opened_orders_count()   + " opened - " 
-                                      + closed_orders_count()   + " closed - " 
-                                      + new_closed_orders()     + " new closed - " 
+
+
+        DEBUG("order_book content : " + opened_orders_count()   + " opened - "
+                                      + closed_orders_count()   + " closed - "
+                                      + new_closed_orders()     + " new closed - "
                                       + archived_orders_count() + " archived")
     }
 
@@ -3002,7 +3002,7 @@ public:
         for(int i = 0; i < keys.size(); ++i)
         {
             int current_ticket = keys.get(i);
-            
+
             if(_opened.access(current_ticket, order) && !order.is(ticket_to_keep))
             {
                 INFO("Closing ticket " + current_ticket)
@@ -3016,12 +3016,12 @@ public:
     // Returns true if there is a newly closed order
     // and sets the function parameter with its reference
     bool access_new_closed(order_t*& output)
-    { 
+    {
         if(!_track_history)
         {
             return false;
         }
-        
+
         DEBUG("order_book::new_closed_orders")
 
         if(_new_closed.size() > 0)
@@ -3055,29 +3055,29 @@ public:
         {
             return;
         }
-        
+
         DEBUG("order_book::archive ticket " + ticket)
-        
+
         bool add_to_archive = false;
-        
+
         if(_opened.contains(ticket))
         {
             _opened.erase(ticket);
             add_to_archive = true;
-        }  
-        
+        }
+
         if(_closed.contains(ticket))
         {
             _closed.erase(ticket);
             add_to_archive = true;
-        }    
-        
+        }
+
         int index = _new_closed.find(ticket);
         if(index > -1)
         {
             _new_closed.erase(index);
         }
-        
+
         if(add_to_archive)
         {
             _archived.push(ticket);
@@ -3090,9 +3090,9 @@ public:
         {
             return;
         }
-        
+
         DEBUG("order_book::archive_closed_orders")
-        
+
         vector<int>* keys = _closed.get_keys_ref();
 
         for(int i = 0; i < keys.size(); ++i)
@@ -3110,31 +3110,31 @@ public:
         {
             return;
         }
-        
+
         DEBUG("order_book::clear_archive")
         _archived.clear();
     }
-    
+
     inline int opened_orders_count() const
     {
         return _opened.size();
     }
-    
+
     inline int closed_orders_count() const
     {
         return _closed.size();
     }
-    
+
     inline int new_closed_orders_count() const
     {
         return _new_closed.size();
     }
-    
+
     inline int archived_orders_count() const
     {
         return _archived.size();
     }
-    
+
     inline bool new_closed_orders() const
     {
         return _new_closed.size() > 0;
@@ -3169,7 +3169,7 @@ private:
 
         return true;
     }
-    
+
     // Members
 
     int     _magic_number;

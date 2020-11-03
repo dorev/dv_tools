@@ -37,9 +37,9 @@ public:
         }
 
         FileSeek(_log_file_handle, 0, SEEK_END);
-        FileWriteString(_log_file_handle, tag + " : " + message + "\n");  
+        FileWriteString(_log_file_handle, tag + " : " + message + "\n");
     }
-    
+
     static string timestamp()
     {
         string timestamp = TimeToString(TimeLocal(), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "." + IntegerToString(GetMicrosecondCount());

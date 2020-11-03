@@ -1,7 +1,7 @@
 # Files to concatenate
 $sources = @(
-    "dv_version.mqh"
     "dv_config.mqh"
+    "dv_version.mqh"
     "dv_logger.mqh"
     "dv_common.mqh"
     "dv_vector.mqh"
@@ -17,7 +17,7 @@ $source_folder = ".\source"
 # Clear previous
 $output = "$PSScriptRoot\dv_tools.mqh"
 
-if (Test-Path "$output") 
+if (Test-Path "$output")
 {
     Write-Host "Previous version of dv_tools.mqh removed"
     Remove-Item $output
