@@ -1,20 +1,4 @@
 ///////////////////////////////////////////////////////////////////////////////
-// dv_version.mqh
-
-#define DV_MAJOR 0
-#define DV_MINOR 0
-#define DV_PATCH 0
-#define DV_BUILD 216
-
-string dv_version()
-{
-    return IntegerToString(DV_MAJOR) + "." +
-           IntegerToString(DV_MINOR) + "." +
-           IntegerToString(DV_PATCH) + "." +
-           IntegerToString(DV_BUILD);
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // dv_config.mqh
 
 // Naming
@@ -60,6 +44,22 @@ string dv_version()
 
 // Base reserve of all container at init
 #define DV_DEFAULT_CONTAINER_RESERVE    16
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_version.mqh
+
+#define DV_MAJOR 1
+#define DV_MINOR 0
+#define DV_PATCH 0
+#define DV_BUILD 1
+
+string dv_version()
+{
+    return IntegerToString(DV_MAJOR) + "." +
+           IntegerToString(DV_MINOR) + "." +
+           IntegerToString(DV_PATCH) + "." +
+           IntegerToString(DV_BUILD);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // dv_logger.mqh

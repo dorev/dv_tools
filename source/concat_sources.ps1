@@ -12,10 +12,10 @@ $sources = @(
     "dv_order_book.mqh"
 )
 
-$source_folder = ".\source"
+$source_folder = "."
 
 # Clear previous
-$output = "$PSScriptRoot\dv_tools.mqh"
+$output = "$PSScriptRoot\..\dv_tools.mqh"
 
 if (Test-Path "$output")
 {
