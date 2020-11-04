@@ -9,7 +9,7 @@ $sources = @(
     "dv_class_vector.mqh"
     "dv_class_map.mqh"
     "dv_ui_manager.mqh"
-    "dv_order_book.mqh"
+    "dv_order_manager.mqh"
 )
 
 $source_folder = "."

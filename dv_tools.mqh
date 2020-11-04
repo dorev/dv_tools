@@ -5,6 +5,9 @@
 #define DV_EA_NAME                      "Unnamed"
 #define DV_EA_VERSION                   "0.0.0.0"
 
+// Comment to define your own "MagicNumber" variable
+#define GENERATE_MAGIC_NUMBER
+
 // Trades config
 #define DV_MAX_PIP_SLIPPAGE             5
 #define DV_MAX_ORDER_SEND_RETRY         3
@@ -34,13 +37,14 @@
 #define DV_DEFAULT_LINE_STYLE           STYLE_SOLID
 #define DV_DEFAULT_LINE_WIDTH           2
 
-// Chart default values
-#define DV_DEFAULT_BG_COLOR             clrAliceBlue
-#define DV_DEFAULT_GRID_COLOR           clrWhiteSmoke
+// Chart default values (MetaTrader default colors)
+#define DV_DEFAULT_BG_COLOR             clrBlack
+#define DV_DEFAULT_AXIS_COLOR           clrWhite
+#define DV_DEFAULT_GRID_COLOR           clrLightSlateGray
 
 // UI grid sizing
-#define DV_COL_SIZE                     (8 * DV_DEFAULT_LABEL_SIZE + 2)
-#define DV_ROW_SIZE                     (DV_DEFAULT_LABEL_SIZE + 2)
+#define DV_COL_SIZE                     (4 * DV_DEFAULT_LABEL_SIZE + 4)
+#define DV_ROW_SIZE                     (DV_DEFAULT_LABEL_SIZE + 4)
 
 // Base reserve of all container at init
 #define DV_DEFAULT_CONTAINER_RESERVE    16
@@ -50,8 +54,8 @@
 
 #define DV_MAJOR 1
 #define DV_MINOR 0
-#define DV_PATCH 0
-#define DV_BUILD 1
+#define DV_PATCH 1
+#define DV_BUILD 9
 
 string dv_version()
 {
@@ -134,6 +138,7 @@ int     logger::_log_file_handle    = INVALID_HANDLE;
 ///////////////////////////////////////////////////////////////////////////////
 // Magic number (used with macro below)
 
+#ifdef GENERATE_MAGIC_NUMBER
 int scramble(string input_string)
 {
     int result = 1;
@@ -148,6 +153,7 @@ int scramble(string input_string)
 const int MagicNumber = MathAbs((scramble(_Symbol)    << 16) |
                                 (scramble(DV_EA_NAME) <<  8) |
                                 (scramble(DV_EA_VERSION)));
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Pip adjustment
@@ -248,6 +254,17 @@ template <typename VALUE_TYPE>
 bool equals(VALUE_TYPE lhs, VALUE_TYPE rhs)
 {
     return lhs == rhs;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Swap
+
+template <typename VALUE_TYPE>
+void swap(VALUE_TYPE& lhs, VALUE_TYPE& rhs)
+{
+    VALUE_TYPE temp = lhs;
+    lhs = rhs;
+    rhs = temp;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2059,6 +2076,213 @@ private:
     bool     _style_changed;
 };
 
+class triangle_t
+{
+public:
+
+    triangle_t(string id, int x_anchor, int y_anchor, int x0, int y0, int x1, int y1, int x2, int y2, color clr)
+        : _id(id)
+        , _x_anchor(x_anchor)
+        , _y_anchor(y_anchor)
+        , _x0(x0)
+        , _y0(y0)
+        , _x1(x1)
+        , _y1(y1)
+        , _x2(x2)
+        , _y2(y2)
+        , _clr(clr)
+    {
+        ObjectCreate(0, _id, OBJ_BITMAP_LABEL, 0, 0, 0);
+        ObjectSetInteger(0, _id, OBJPROP_XDISTANCE, _x_anchor);
+        ObjectSetInteger(0, _id, OBJPROP_YDISTANCE, _y_anchor);
+
+        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        {
+            ERROR("Unable to create triangle " + _id)
+        }
+    }
+
+    void erase()
+    {
+        DEBUG("Deleting triangle " + _id)
+        ObjectDelete(0, _id);
+    }
+
+    void move_anchor(int x, int y)
+    {
+        ObjectSetInteger(0, _id, OBJPROP_XDISTANCE, x);
+        ObjectSetInteger(0, _id, OBJPROP_YDISTANCE, y);
+    }
+
+    void set_color(color clr)
+    {
+        _clr = clr;
+        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        {
+            ERROR("Unable to move edit triangle " + _id + " color to " + ColorToString(clr))
+        }
+    }
+
+    void move_point_0(int x, int y)
+    {
+        _x0 = x;
+        _y0 = y;
+
+        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        {
+            ERROR("Unable to move triangle " + _id + " point 0 to (" + x + "," + y + ")")
+        }
+    }
+
+    void move_point_1(int x, int y)
+    {
+        _x1 = x;
+        _y1 = y;
+
+        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        {
+            ERROR("Unable to move triangle " + _id + " point 1 to (" + x + "," + y + ")")
+        }
+    }
+
+    void move_point_2(int x, int y)
+    {
+        _x2 = x;
+        _y2 = y;
+
+        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        {
+            ERROR("Unable to move triangle " + _id + " point 2 to (" + x + "," + y + ")")
+        }
+    }
+
+private:
+
+    // taken from https://www.mql5.com/en/forum/6417
+    bool draw_triangle(int x0, int y0, int x1, int y1, int x2, int y2, color clr)
+    {
+        uint data[];
+        string rcname = "::" + _id;
+        int temp;
+        int width;
+        int height;
+
+        // sort by Y
+        if(y0>y1) { swap(y1, y0); swap(x1, x0); }
+        if(y0>y2) { swap(y0, y2); swap(x0, x2); }
+        if(y1>y2) { swap(y1, y2); swap(x1, x2); }
+
+        // min/max by X
+        int min_x = MathMin(x0, MathMin(x1, x2));
+        int max_x = MathMax(x0, MathMax(x1, x2));
+
+        // invisible
+        if(y2 < 0 || max_x < 0)
+        {
+            if(ArrayResize(data, 1) < 0)
+            {
+                return false;
+            }
+
+            data[0] = 0;
+            width = 1;
+            height = 1;
+        }
+        else
+        {
+            width = max_x + 1;
+            height = y2 + 1;
+
+            if(ArrayResize(data, width * height) < 0)
+            {
+                return false;
+            }
+
+            ArrayInitialize(data, 0);
+
+            double k1, k2;
+
+            if((temp = y0-y1) != 0)
+            {
+                k1 = (x0 - x1) / (double)temp;
+            }
+
+            if((temp = y0 - y2) != 0)
+            {
+                k2 = (x0 - x2) / (double)temp;
+            }
+
+            double xd1 = x0;
+            double xd2 = x0;
+
+            for(int i = y0, xx1, xx2; i <= y2; i++)
+            {
+                if(i == y1)
+                {
+                    if((temp = y1 - y2) != 0)
+                    {
+                        k1 = (x1 - x2) / (double)temp;
+                    }
+                    xd1 = x1;
+                }
+
+                xx1 = (int)xd1;
+                xd1 += k1;
+                xx2 = (int)xd2;
+                xd2 += k2;
+
+                if(i < 0) continue;
+
+                if(xx1 > xx2)
+                {
+                    swap(xx1, xx2);
+                }
+
+                if(xx2 < 0 || xx1 >= width) continue;
+
+                if(xx1 < 0)
+                {
+                    xx1 = 0;
+                }
+
+                if(xx2 >= width)
+                {
+                    xx2 = width - 1;
+                }
+
+                // ARGB data
+                uint pixel = 0xFF000000 | ((clr & 0xFF)<<16) | (clr & 0xFF00) | ((clr>>16) & 0xFF);
+                for(int j = xx1; j <= xx2; j++)
+                {
+                    data[i * width + j] = pixel;
+                }
+            }
+        }
+
+        if(!ResourceCreate(rcname,data,width,height,0,0,0,COLOR_FORMAT_ARGB_RAW))
+        {
+            return false;
+        }
+
+        ObjectSetString(0, _id, OBJPROP_BMPFILE, rcname);
+        return true;
+    }
+
+    // Members
+
+    string _id;
+    int _x_anchor;
+    int _y_anchor;
+    int _x0;
+    int _y0;
+    int _x1;
+    int _y1;
+    int _x2;
+    int _y2;
+    color _clr;
+
+};
+
 string UI_TICK;
 
 class ui_manager
@@ -2068,14 +2292,40 @@ public:
     ui_manager()
     {
         DEBUG("ui_manager constructed")
-
-        // Set bg color
-        // Set grids
+        set_background_color(DV_DEFAULT_BG_COLOR);
+        set_axis_color(DV_DEFAULT_AXIS_COLOR);
+        set_grid_color(DV_DEFAULT_GRID_COLOR);
         init_tick();
     }
 
-    // Labels
+    void set_background_color(color clr)
+    {
+        DEBUG("ui_manager::set_background_color with " + ColorToString(clr))
+        if(!ChartSetInteger(0, CHART_COLOR_BACKGROUND, clr))
+        {
+            ERROR("Unable to set background color to " + ColorToString(clr))
+        }
+    }
 
+    void set_axis_color(color clr)
+    {
+        DEBUG("ui_manager::set_axis_color with " + ColorToString(clr))
+        if(!ChartSetInteger(0, CHART_COLOR_FOREGROUND, clr))
+        {
+            ERROR("Unable to set axis color to " + ColorToString(clr))
+        }
+    }
+
+    void set_grid_color(color clr)
+    {
+        DEBUG("ui_manager::set_grid_color with " + ColorToString(clr))
+        if(!ChartSetInteger(0, CHART_COLOR_GRID, clr))
+        {
+            ERROR("Unable to set grid color to " + ColorToString(clr))
+        }
+    }
+
+    // Labels
     bool create_label(
         string label_name = NULL,
         string text  = "UNINITIALIZED TEXT",
@@ -2580,9 +2830,9 @@ int dv_col(int x)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// dv_order_book.mqh
+// dv_order_manager.mqh
 
-#ifdef __MQL4__ // order and order_book not implemented for MT5
+#ifdef __MQL4__ // order and order_manager not implemented for MT5
 
 class order_t
 {
@@ -2836,29 +3086,29 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class order_book
+class order_manager
 {
 public:
 
-    order_book(bool track_history = true)
+    order_manager(bool track_history = true)
         : _magic_number(MagicNumber)
         , _symbol(_Symbol)
         , _track_history(track_history)
     {
-        INFO("order_book created for " + _symbol + " with magic number " + _magic_number)
+        INFO("order_manager created for " + _symbol + " with magic number " + _magic_number)
     }
 
     // Tracking history enables to monitor closed orders and archived orders
     // If history is not tracked, _closed and _archived are always emptied
     void track_history(bool track_history)
     {
-        DEBUG("order_book::track_history " + track_history)
+        DEBUG("order_manager::track_history " + track_history)
 
         _track_history = track_history;
 
         if(!_track_history)
         {
-            DEBUG("Clearing order_book history")
+            DEBUG("Clearing order_manager history")
             _new_closed.clear();
             _archived.clear();
             _closed.clear();
@@ -2867,7 +3117,7 @@ public:
 
     void refresh()
     {
-        DEBUG("order_book::refresh")
+        DEBUG("order_manager::refresh")
 
         // Working variables
         int ticket = 0;
@@ -2876,11 +3126,11 @@ public:
         // Scan all open trades and history to validate/update the current content
         FOR_TRADES
             ticket = OrderTicket();
-            DEBUG("order_book::refresh processing ticket " + ticket + "...")
+            DEBUG("order_manager::refresh processing ticket " + ticket + "...")
 
             if(_opened.access(ticket, order_ref))
             {
-                DEBUG("order_book::refresh detected opened ticket " + ticket)
+                DEBUG("order_manager::refresh detected opened ticket " + ticket)
                 order_ref.update();
             }
             else if(_track_history && _closed.access(ticket, order_ref))
@@ -2897,11 +3147,11 @@ public:
             else if(_track_history && _archived.find(ticket) >= 0)
             {
                 // do nothing
-                DEBUG("order_book::refresh discovered archived ticket " + ticket)
+                DEBUG("order_manager::refresh discovered archived ticket " + ticket)
             }
             else
             {
-                DEBUG("order_book::refresh discovered new ticket " + ticket)
+                DEBUG("order_manager::refresh discovered new ticket " + ticket)
                 add_order(ticket);
             }
         FOR_TRADES_END
@@ -2925,7 +3175,7 @@ public:
                     if(order_t::is_closed(ticket))
                     {
                         _archived.push(ticket);
-                        DEBUG("Untracked closed order added to order_book archive")
+                        DEBUG("Untracked closed order added to order_manager archive")
                     }
                     else
                     {
@@ -2964,7 +3214,7 @@ public:
         }
 
 
-        DEBUG("order_book content : " + opened_orders_count()   + " opened - "
+        DEBUG("order_manager content : " + opened_orders_count()   + " opened - "
                                       + closed_orders_count()   + " closed - "
                                       + new_closed_orders()     + " new closed - "
                                       + archived_orders_count() + " archived")
@@ -3022,7 +3272,7 @@ public:
             return false;
         }
 
-        DEBUG("order_book::new_closed_orders")
+        DEBUG("order_manager::new_closed_orders")
 
         if(_new_closed.size() > 0)
         {
@@ -3033,19 +3283,19 @@ public:
             }
         }
 
-        DEBUG("order_book::new_closed_orders found no new closed order")
+        DEBUG("order_manager::new_closed_orders found no new closed order")
         return false;
     }
 
     class_map<int, order_t>* get_opened_orders_map_ref()
     {
-        DEBUG("order_book::get_opened_orders_map_ref")
+        DEBUG("order_manager::get_opened_orders_map_ref")
         return &_opened;
     }
 
     class_map<int, order_t>* get_closed_orders_map_ref()
     {
-        DEBUG("order_book::get_closed_orders_map_ref")
+        DEBUG("order_manager::get_closed_orders_map_ref")
         return &_closed;
     }
 
@@ -3056,7 +3306,7 @@ public:
             return;
         }
 
-        DEBUG("order_book::archive ticket " + ticket)
+        DEBUG("order_manager::archive ticket " + ticket)
 
         bool add_to_archive = false;
 
@@ -3091,7 +3341,7 @@ public:
             return;
         }
 
-        DEBUG("order_book::archive_closed_orders")
+        DEBUG("order_manager::archive_closed_orders")
 
         vector<int>* keys = _closed.get_keys_ref();
 
@@ -3111,7 +3361,7 @@ public:
             return;
         }
 
-        DEBUG("order_book::clear_archive")
+        DEBUG("order_manager::clear_archive")
         _archived.clear();
     }
 
