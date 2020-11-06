@@ -55,7 +55,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 0
 #define DV_PATCH 1
-#define DV_BUILD 9
+#define DV_BUILD 11
 
 string dv_version()
 {
@@ -982,6 +982,36 @@ public:
         return &this;
     }
 
+    template<typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6, typename ARG7, typename ARG8>
+    class_vector<CLASS_TYPE>* emplace(ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6, ARG7 arg7, ARG8 arg8)
+    {
+        DEBUG("class_vector::emplace with 8 arguments")
+
+        bust_resize_check();
+        _classes[_size++] = new CLASS_TYPE(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+        return &this;
+    }
+
+    template<typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6, typename ARG7, typename ARG8, typename ARG9>
+    class_vector<CLASS_TYPE>* emplace(ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6, ARG7 arg7, ARG8 arg8, ARG9 arg9)
+    {
+        DEBUG("class_vector::emplace with 9 arguments")
+
+        bust_resize_check();
+        _classes[_size++] = new CLASS_TYPE(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+        return &this;
+    }
+
+    template<typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6, typename ARG7, typename ARG8, typename ARG9, typename ARG10>
+    class_vector<CLASS_TYPE>* emplace(ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6, ARG7 arg7, ARG8 arg8, ARG9 arg9, ARG10 arg10)
+    {
+        DEBUG("class_vector::emplace with 10 arguments")
+
+        bust_resize_check();
+        _classes[_size++] = new CLASS_TYPE(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+        return &this;
+    }
+
     // Deletes the object and the specified index and shifts-left remaining pointers
     bool erase(int index)
     {
@@ -1339,6 +1369,78 @@ public:
         {
             // Replace existing value associated with key
             CLASS_TYPE instance(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            _values.get_ref(index) = instance;
+        }
+
+        return &this;
+    }
+
+    template <typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6, typename ARG7, typename ARG8>
+    class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6, ARG7 arg7, ARG8 arg8)
+    {
+        DEBUG("class_map::emplace with 8 arguments for key " + key)
+
+        int index = _keys.find(key);
+
+        // If the key can't be looked up, create it
+        if(index < 0)
+        {
+            // Create key
+            _keys.push(key);
+            _values.emplace(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+        }
+        else
+        {
+            // Replace existing value associated with key
+            CLASS_TYPE instance(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            _values.get_ref(index) = instance;
+        }
+
+        return &this;
+    }
+
+    template <typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6, typename ARG7, typename ARG8, typename ARG9>
+    class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6, ARG7 arg7, ARG8 arg8, ARG9 arg9)
+    {
+        DEBUG("class_map::emplace with 9 arguments for key " + key)
+
+        int index = _keys.find(key);
+
+        // If the key can't be looked up, create it
+        if(index < 0)
+        {
+            // Create key
+            _keys.push(key);
+            _values.emplace(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+        }
+        else
+        {
+            // Replace existing value associated with key
+            CLASS_TYPE instance(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+            _values.get_ref(index) = instance;
+        }
+
+        return &this;
+    }
+
+    template <typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5, typename ARG6, typename ARG7, typename ARG8, typename ARG9, typename ARG10>
+    class_map<KEY_TYPE, CLASS_TYPE>* emplace(KEY_TYPE key, ARG1 arg1, ARG2 arg2, ARG3 arg3, ARG4 arg4, ARG5 arg5, ARG6 arg6, ARG7 arg7, ARG8 arg8, ARG9 arg9, ARG10 arg10)
+    {
+        DEBUG("class_map::emplace with 10 arguments for key " + key)
+
+        int index = _keys.find(key);
+
+        // If the key can't be looked up, create it
+        if(index < 0)
+        {
+            // Create key
+            _keys.push(key);
+            _values.emplace(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+        }
+        else
+        {
+            // Replace existing value associated with key
+            CLASS_TYPE instance(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
             _values.get_ref(index) = instance;
         }
 
@@ -2049,7 +2151,6 @@ public:
         }
 
         clear_flags();
-
     }
 
 private:
@@ -2080,7 +2181,7 @@ class triangle_t
 {
 public:
 
-    triangle_t(string id, int x_anchor, int y_anchor, int x0, int y0, int x1, int y1, int x2, int y2, color clr)
+    triangle_t(string id = NULL, int x_anchor = 0, int y_anchor = 0, int x0 = 0, int y0 = 0, int x1 = 0, int y1 = 0, int x2 = 0, int y2 = 0, color clr = clrRed)
         : _id(id)
         , _x_anchor(x_anchor)
         , _y_anchor(y_anchor)
@@ -2091,86 +2192,129 @@ public:
         , _x2(x2)
         , _y2(y2)
         , _clr(clr)
+        , _has_changed(true)
     {
-        ObjectCreate(0, _id, OBJ_BITMAP_LABEL, 0, 0, 0);
-        ObjectSetInteger(0, _id, OBJPROP_XDISTANCE, _x_anchor);
-        ObjectSetInteger(0, _id, OBJPROP_YDISTANCE, _y_anchor);
+        DEBUG("triangle_t constructed " + (id == NULL ? "NULL" : _id))
 
-        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        if(_id == NULL)
         {
-            ERROR("Unable to create triangle " + _id)
+            WARNING("A triangle_t was created with NULL id")
         }
     }
 
-    void erase()
+    // Copy constructor
+    triangle_t(const triangle_t& other)
+        : _id(other.get_id())
+        , _x_anchor(other.get_x_anchor())
+        , _y_anchor(other.get_y_anchor())
+        , _x0(other.get_x0())
+        , _y0(other.get_y0())
+        , _x1(other.get_x1())
+        , _y1(other.get_y1())
+        , _x2(other.get_x2())
+        , _y2(other.get_y2())
+        , _clr(other.get_color())
+        , _has_changed(other.has_changed())
     {
-        DEBUG("Deleting triangle " + _id)
-        ObjectDelete(0, _id);
+        DEBUG("triangle_t copy constructed " + _id)
+
+        if(_id == NULL)
+        {
+            WARNING("A triangle_t was copy-constructed with NULL id")
+        }
     }
 
-    void move_anchor(int x, int y)
+    // Accessors
+
+    inline string   get_id()        const { return _id; }
+    inline color    get_color()     const { return _clr; }
+    inline int      get_x0()        const { return _x0; }
+    inline int      get_y0()        const { return _y0; }
+    inline int      get_x1()        const { return _x1; }
+    inline int      get_y1()        const { return _y1; }
+    inline int      get_x2()        const { return _x2; }
+    inline int      get_y2()        const { return _y2; }
+    inline int      get_x_anchor()  const { return _x_anchor; }
+    inline int      get_y_anchor()  const { return _y_anchor; }
+
+    inline bool has_changed()       const { return _has_changed; }
+
+    // Mutators
+
+    void set_anchors(int x, int y)
     {
-        ObjectSetInteger(0, _id, OBJPROP_XDISTANCE, x);
-        ObjectSetInteger(0, _id, OBJPROP_YDISTANCE, y);
+        DEBUG("triangle_t::set_anchors of " + _id + " to (" + x + "," + y +")")
+        if(x != _x_anchor || y != _y_anchor)
+        {
+            _x_anchor = x;
+            _y_anchor = y;
+            _has_changed = true;
+        }
     }
 
     void set_color(color clr)
     {
-        _clr = clr;
-        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        DEBUG("triangle_t::set_color of " + _id + " with " + ColorToString(clr))
+        if(clr != _clr)
         {
-            ERROR("Unable to move edit triangle " + _id + " color to " + ColorToString(clr))
+            _clr = clr;
+            _has_changed = true;
         }
     }
 
-    void move_point_0(int x, int y)
+    void set_points(int x0, int y0, int x1, int y1, int x2, int y2)
     {
-        _x0 = x;
-        _y0 = y;
-
-        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        DEBUG("triangle_t::set_points of " + _id + " to (" + x0 + "," + y0 + "," + x1 + "," + y1 + "," + x2  + "," + y2 + ")")
+        if(x0 != _x0 || y0 != _y0 ||
+           x1 != _x1 || y1 != _y1 ||
+           x2 != _x2 || y2 != _y2)
         {
-            ERROR("Unable to move triangle " + _id + " point 0 to (" + x + "," + y + ")")
+            _x0 = x0;
+            _y0 = y0;
+            _x1 = x1;
+            _y1 = y1;
+            _x2 = x2;
+            _y2 = y2;
+            _has_changed = true;
         }
     }
 
-    void move_point_1(int x, int y)
+    void update()
     {
-        _x1 = x;
-        _y1 = y;
-
-        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        if(_has_changed && !draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
         {
-            ERROR("Unable to move triangle " + _id + " point 1 to (" + x + "," + y + ")")
+            ERROR("Unable to draw triangle " + _id)
         }
-    }
 
-    void move_point_2(int x, int y)
-    {
-        _x2 = x;
-        _y2 = y;
-
-        if(!draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
-        {
-            ERROR("Unable to move triangle " + _id + " point 2 to (" + x + "," + y + ")")
-        }
+        clear_flags();
     }
 
 private:
 
+    // Private utilities
+
+    void clear_flags()
+    {
+        DEBUG("triangle_t::clear_flags " + _id)
+        _has_changed  = false;
+    }
+
     // taken from https://www.mql5.com/en/forum/6417
     bool draw_triangle(int x0, int y0, int x1, int y1, int x2, int y2, color clr)
     {
+        ObjectSetInteger(0, _id, OBJPROP_XDISTANCE, _x_anchor);
+        ObjectSetInteger(0, _id, OBJPROP_YDISTANCE, _y_anchor);
+
         uint data[];
-        string rcname = "::" + _id;
+        string resource_name = "::" + _id;
         int temp;
         int width;
         int height;
 
         // sort by Y
-        if(y0>y1) { swap(y1, y0); swap(x1, x0); }
-        if(y0>y2) { swap(y0, y2); swap(x0, x2); }
-        if(y1>y2) { swap(y1, y2); swap(x1, x2); }
+        if(y0 > y1) { swap(y1, y0); swap(x1, x0); }
+        if(y0 > y2) { swap(y0, y2); swap(x0, x2); }
+        if(y1 > y2) { swap(y1, y2); swap(x1, x2); }
 
         // min/max by X
         int min_x = MathMin(x0, MathMin(x1, x2));
@@ -2185,8 +2329,8 @@ private:
             }
 
             data[0] = 0;
-            width = 1;
-            height = 1;
+            width   = 1;
+            height  = 1;
         }
         else
         {
@@ -2202,7 +2346,7 @@ private:
 
             double k1, k2;
 
-            if((temp = y0-y1) != 0)
+            if((temp = y0 - y1) != 0)
             {
                 k1 = (x0 - x1) / (double)temp;
             }
@@ -2251,7 +2395,7 @@ private:
                 }
 
                 // ARGB data
-                uint pixel = 0xFF000000 | ((clr & 0xFF)<<16) | (clr & 0xFF00) | ((clr>>16) & 0xFF);
+                uint pixel = 0xFF000000 | ((clr & 0xFF) << 16) | (clr & 0xFF00) | ((clr >> 16) & 0xFF);
                 for(int j = xx1; j <= xx2; j++)
                 {
                     data[i * width + j] = pixel;
@@ -2259,12 +2403,12 @@ private:
             }
         }
 
-        if(!ResourceCreate(rcname,data,width,height,0,0,0,COLOR_FORMAT_ARGB_RAW))
+        if(!ResourceCreate(resource_name, data, width, height, 0, 0, 0, COLOR_FORMAT_ARGB_RAW))
         {
             return false;
         }
 
-        ObjectSetString(0, _id, OBJPROP_BMPFILE, rcname);
+        ObjectSetString(0, _id, OBJPROP_BMPFILE, resource_name);
         return true;
     }
 
@@ -2280,6 +2424,7 @@ private:
     int _x2;
     int _y2;
     color _clr;
+    bool _has_changed;
 
 };
 
@@ -2323,6 +2468,58 @@ public:
         {
             ERROR("Unable to set grid color to " + ColorToString(clr))
         }
+    }
+
+    // Triangles
+    bool create_triangle(
+        string triangle_name = NULL,
+        int x_anchor = 0,
+        int y_anchor = 0,
+        int x0 = 0,
+        int y0 = 0,
+        int x1 = 0,
+        int y1 = 0,
+        int x2 = 0,
+        int y2 = 0,
+        color clr = clrRed)
+    {
+        DEBUG("ui_manager::create_triangle " + (triangle_name == NULL ? "NULL" : triangle_name))
+
+        if(triangle_name == NULL)
+        {
+            ERROR("Unable to create triangle with NULL id")
+            return false;
+        }
+
+        if(_triangle_map.contains(triangle_name))
+        {
+            WARNING("Attempt to re-create triangle " + triangle_name + " prevented")
+            return false;
+        }
+
+        if(ObjectCreate(0, triangle_name, OBJ_BITMAP_LABEL, 0, 0, 0))
+        {
+            // Add item to ui_manager lists
+            _triangle_map.emplace(
+                triangle_name, // key to write
+                triangle_name, // id to create
+                x_anchor,
+                y_anchor,
+                x0,
+                y0,
+                x1,
+                y1,
+                x2,
+                y2,
+                clr);
+        }
+        else
+        {
+            WARNING("Unable to create triangle " + triangle_name)
+            return false;
+        }
+
+        return true;
     }
 
     // Labels
@@ -2385,7 +2582,7 @@ public:
         }
         else
         {
-            WARNING("Unable to createlabel " + label_name)
+            WARNING("Unable to create label " + label_name)
             return false;
         }
 
@@ -2501,6 +2698,87 @@ public:
 
     }
 
+    // Edit objects
+
+    bool edit_triangle_points(string triangle_name, int x0, int y0, int x1, int y1, int x2, int y2)
+    {
+        DEBUG("ui_namager::edit_triangle_points " + triangle_name)
+
+        triangle_t* triangle = NULL;
+
+        if(_triangle_map.access(triangle_name, triangle))
+        {
+            triangle.set_points(x0, y0, x1, y1, x2, y2);
+        }
+        else
+        {
+            WARNING("Attempt to change points of invalid triangle " + triangle_name)
+            return false;
+        }
+
+        return true;
+    }
+
+    bool edit_triangle_color(string triangle_name, color clr)
+    {
+        DEBUG("ui_namager::edit_triangle_color " + triangle_name)
+
+        triangle_t* triangle = NULL;
+
+        if(_triangle_map.access(triangle_name, triangle))
+        {
+            triangle.set_color(clr);
+        }
+        else
+        {
+            WARNING("Attempt to change color of invalid triangle " + triangle_name)
+            return false;
+        }
+
+        return true;
+    }
+
+    bool edit_triangle_anchors(string triangle_name, int x, int y)
+    {
+        DEBUG("ui_namager::edit_triangle_anchors " + triangle_name)
+
+        triangle_t* triangle = NULL;
+
+        if(_triangle_map.access(triangle_name, triangle))
+        {
+            triangle.set_anchors(x, y);
+        }
+        else
+        {
+            WARNING("Attempt to change anchors of invalid triangle " + triangle_name)
+            return false;
+        }
+
+        return true;
+    }
+
+    bool delete_triangle(string triangle_name)
+    {
+        DEBUG("ui_namager::delete_triangle " + triangle_name)
+
+        if(_triangle_map.contains(triangle_name) == false)
+        {
+            WARNING("Attempt to delete inexistant triangle " + triangle_name + " prevented")
+            return false;
+        }
+
+        if(ObjectDelete(0, triangle_name))
+        {
+            _triangle_map.erase(triangle_name);
+            return true;
+        }
+        else
+        {
+            WARNING("Unable to delete triangle " + triangle_name)
+            return false;
+        }
+    }
+
     bool edit_label_text(string label_name, string text)
     {
         DEBUG("ui_namager::edit_label_text " + label_name)
@@ -2590,7 +2868,7 @@ public:
         }
 
         create_label("·", UI_TICK, 3, 15,
-            DV_DEFAULT_GRID_COLOR,
+            DV_DEFAULT_AXIS_COLOR,
             DV_DEFAULT_LABEL_FONT,
             7, 2);
     }
@@ -2724,9 +3002,8 @@ public:
         // Check all items to see if something needs to be updated
 
         // Check labels
-        vector<string>* keys = _label_map.get_keys_ref();
         int i = 0;
-
+        vector<string>* keys = _label_map.get_keys_ref();
         for(i = 0; i < keys.size(); ++i)
         {
             process<label_t>(keys.get(i), _label_map);
@@ -2734,7 +3011,6 @@ public:
 
         // Check horizontal lines
         keys = _hline_map.get_keys_ref();
-
         for(i = 0; i < keys.size(); ++i)
         {
             process<hline_t>(keys.get(i), _hline_map);
@@ -2742,10 +3018,16 @@ public:
 
         // Check vertical lines
         keys = _vline_map.get_keys_ref();
-
         for(i = 0; i < keys.size(); ++i)
         {
             process<vline_t>(keys.get(i), _vline_map);
+        }
+
+        // Check triangles
+        keys = _triangle_map.get_keys_ref();
+        for(i = 0; i < keys.size(); ++i)
+        {
+            process<triangle_t>(keys.get(i), _triangle_map);
         }
 
         ChartRedraw();
@@ -2811,9 +3093,11 @@ private:
     inline class_map<string, label_t>* get_map_by_type(label_t*) { return &_label_map; }
     inline class_map<string, hline_t>* get_map_by_type(hline_t*) { return &_hline_map; }
     inline class_map<string, vline_t>* get_map_by_type(vline_t*) { return &_vline_map; }
+    inline class_map<string, triangle_t>* get_map_by_type(triangle_t*) { return &_triangle_map; }
 
     // Members
 
+    class_map<string, triangle_t> _triangle_map;
     class_map<string, label_t> _label_map;
     class_map<string, hline_t> _hline_map;
     class_map<string, vline_t> _vline_map;
