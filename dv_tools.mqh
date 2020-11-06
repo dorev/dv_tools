@@ -55,7 +55,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 0
 #define DV_PATCH 1
-#define DV_BUILD 11
+#define DV_BUILD 13
 
 string dv_version()
 {
@@ -282,6 +282,7 @@ bool    _discard_b_ = false;
 // Convenience macro to iterate over orders
 int __order__ = 0;
 #define FOR_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
+#define FOR_ALL_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES)) { continue; }
 #define FOR_HISTORY for(__order__ = OrdersHistoryTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_HISTORY) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
 #define ORDER_INDEX __order__
 #define FOR_TRADES_END }
@@ -3322,6 +3323,17 @@ public:
         return ticket;
     }
 
+    bool is_sell() const
+    {
+        // odd type value is a sell order
+        return (bool)(_type & 1);
+    }
+
+    bool is_buy() const
+    {
+        return !is_sell();
+    }
+
     inline int         get_ticket()       const { return _ticket; }
     inline string      get_symbol()       const { return _symbol; }
     inline int         get_magic_number() const { return _magic_number; }
@@ -3337,19 +3349,6 @@ public:
     inline double      get_profit()       const { return _profit; }
 
 private:
-
-    // Internal utilities
-
-    bool is_sell() const
-    {
-        // odd type value is a sell order
-        return (bool)(_type & 1);
-    }
-
-    bool is_buy() const
-    {
-        return !is_sell();
-    }
 
     // Members
 
