@@ -63,8 +63,8 @@
 #ifndef DV_DEFAULT_BG_COLOR
 #define DV_DEFAULT_BG_COLOR             clrBlack
 #endif
-#ifndef DV_DEFAULT_GRID_COLOR
-#define DV_DEFAULT_GRID_COLOR           clrWhite
+#ifndef DV_DEFAULT_AXIS_COLOR
+#define DV_DEFAULT_AXIS_COLOR           clrWhite
 #endif
 #ifndef DV_DEFAULT_GRID_COLOR
 #define DV_DEFAULT_GRID_COLOR           clrLightSlateGray
@@ -89,7 +89,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 0
 #define DV_PATCH 2
-#define DV_BUILD 18
+#define DV_BUILD 19
 
 string dv_version()
 {
