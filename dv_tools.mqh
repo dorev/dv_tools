@@ -2,60 +2,94 @@
 // dv_config.mqh
 
 // Naming
-#define DV_EA_NAME                      "Unnamed"
-#define DV_EA_VERSION                   "0.0.0.0"
+#ifndef DV_EA_NAME
+#define DV_EA_NAME                         "Unnamed"
+#endif
 
-// Comment to define your own "MagicNumber" variable
-#define GENERATE_MAGIC_NUMBER
+#ifndef DV_EA_VERSION
+#define DV_EA_VERSION                      "0.0.0.0"
+#endif
 
 // Trades config
+#ifndef DV_MAX_PIP_SLIPPAGE
 #define DV_MAX_PIP_SLIPPAGE             5
+#endif
+#ifndef DV_MAX_ORDER_SEND_RETRY
 #define DV_MAX_ORDER_SEND_RETRY         3
+#endif
+#ifndef DV_DEFAULT_TAKEPROFIT
 #define DV_DEFAULT_TAKEPROFIT           30
+#endif
+#ifndef DV_DEFAULT_STOPLOSS
 #define DV_DEFAULT_STOPLOSS             15
+#endif
 
-// Log level (comment to disable)
+// Log level
 //#define DV_LOG_DEBUG
-#define DV_LOG_INFO
-#define DV_LOG_WARNING
-#define DV_LOG_ERROR
+//#define DV_LOG_INFO
+//#define DV_LOG_WARNING
+//#define DV_LOG_ERROR
 
-// Log to file (comment to disable)
-#define DV_ENABLE_LOG_FILE
-#define DV_LOG_FILE_DEBUG
-#define DV_LOG_FILE_INFO
-#define DV_LOG_FILE_WARNING
-#define DV_LOG_FILE_ERROR
+// Log to file
+//#define DV_ENABLE_LOG_FILE
+//#define DV_LOG_FILE_DEBUG
+//#define DV_LOG_FILE_INFO
+//#define DV_LOG_FILE_WARNING
+//#define DV_LOG_FILE_ERROR
 
 // Label default values
+#ifndef DV_DEFAULT_LABEL_COLOR
 #define DV_DEFAULT_LABEL_COLOR          clrRed
+#endif
+#ifndef DV_DEFAULT_LABEL_FONT
 #define DV_DEFAULT_LABEL_FONT           "Consolas"
+#endif
+#ifndef DV_DEFAULT_LABEL_SIZE
 #define DV_DEFAULT_LABEL_SIZE           12
+#endif
 
 // Lines default values
+#ifndef DV_DEFAULT_LINE_COLOR
 #define DV_DEFAULT_LINE_COLOR           clrRed
+#endif
+#ifndef DV_DEFAULT_LINE_STYLE
 #define DV_DEFAULT_LINE_STYLE           STYLE_SOLID
+#endif
+#ifndef DV_DEFAULT_LINE_WIDTH
 #define DV_DEFAULT_LINE_WIDTH           2
+#endif
 
 // Chart default values (MetaTrader default colors)
+#ifndef DV_DEFAULT_BG_COLOR
 #define DV_DEFAULT_BG_COLOR             clrBlack
-#define DV_DEFAULT_AXIS_COLOR           clrWhite
+#endif
+#ifndef DV_DEFAULT_GRID_COLOR
+#define DV_DEFAULT_GRID_COLOR           clrWhite
+#endif
+#ifndef DV_DEFAULT_GRID_COLOR
 #define DV_DEFAULT_GRID_COLOR           clrLightSlateGray
+#endif
 
 // UI grid sizing
-#define DV_COL_SIZE                     (4 * DV_DEFAULT_LABEL_SIZE + 4)
-#define DV_ROW_SIZE                     (DV_DEFAULT_LABEL_SIZE + 4)
+#ifndef DV_COL_SIZE
+#define DV_COL_SIZE                     48
+#endif
+#ifndef DV_ROW_SIZE
+#define DV_ROW_SIZE                     16
+#endif
 
 // Base reserve of all container at init
+#ifndef DV_DEFAULT_CONTAINER_RESERVE
 #define DV_DEFAULT_CONTAINER_RESERVE    16
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // dv_version.mqh
 
 #define DV_MAJOR 1
 #define DV_MINOR 0
-#define DV_PATCH 1
-#define DV_BUILD 13
+#define DV_PATCH 2
+#define DV_BUILD 18
 
 string dv_version()
 {
@@ -138,7 +172,7 @@ int     logger::_log_file_handle    = INVALID_HANDLE;
 ///////////////////////////////////////////////////////////////////////////////
 // Magic number (used with macro below)
 
-#ifdef GENERATE_MAGIC_NUMBER
+#ifdef DV_GENERATE_MAGIC_NUMBER
 int scramble(string input_string)
 {
     int result = 1;
@@ -1049,8 +1083,6 @@ public:
     {
         DEBUG("class_vector::clear called with reset_reserve = " + (reset_reserve ? "true" : "false"))
 
-        _size = 0;
-
         for(int i = 0; i < _size; ++i)
         {
             safe_delete(_classes[i]);
@@ -1060,6 +1092,8 @@ public:
         {
             resize(DV_DEFAULT_CONTAINER_RESERVE);
         }
+
+        _size = 0;
 
         return &this;
     }
@@ -2438,10 +2472,31 @@ public:
     ui_manager()
     {
         DEBUG("ui_manager constructed")
+
+        int objects_cleared = ObjectsDeleteAll(0);
+        if(objects_cleared > 0)
+        {
+            INFO("Clearing chart 0 of " + objects_cleared + " objects");
+        }
+        
         set_background_color(DV_DEFAULT_BG_COLOR);
         set_axis_color(DV_DEFAULT_AXIS_COLOR);
         set_grid_color(DV_DEFAULT_GRID_COLOR);
         init_tick();
+    }
+
+    ~ui_manager()
+    {
+        clear();
+    }
+
+    void clear()
+    {
+        ObjectsDeleteAll(0);
+        _label_map.clear();
+        _hline_map.clear();
+        _vline_map.clear();
+        _triangle_map.clear();
     }
 
     void set_background_color(color clr)
