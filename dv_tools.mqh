@@ -32,10 +32,10 @@
 
 // Log to file
 //#define DV_ENABLE_LOG_FILE
-//#define DV_LOG_FILE_DEBUG
-//#define DV_LOG_FILE_INFO
-//#define DV_LOG_FILE_WARNING
-//#define DV_LOG_FILE_ERROR
+#define DV_LOG_FILE_DEBUG
+#define DV_LOG_FILE_INFO
+#define DV_LOG_FILE_WARNING
+#define DV_LOG_FILE_ERROR
 
 // Label default values
 #ifndef DV_DEFAULT_LABEL_COLOR
@@ -89,7 +89,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 0
 #define DV_PATCH 2
-#define DV_BUILD 20
+#define DV_BUILD 21
 
 string dv_version()
 {

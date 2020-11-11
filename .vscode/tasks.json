@@ -17,7 +17,7 @@
         {
             "label": "MT4",
             "type": "shell",
-            "command": "del ${workspaceRoot}\\source\\dv_tests.log & ${workspaceRoot}\\bin\\metaeditor.exe /compile:${workspaceRoot}\\source\\dv_tests.mq4 /s /log & type ${workspaceRoot}\\source\\dv_tests.log",
+            "command": "del ${workspaceRoot}\\src\\dv_tests.log & ${workspaceRoot}\\bin\\metaeditor.exe /compile:${workspaceRoot}\\src\\dv_tests.mq4 /s /log & type ${workspaceRoot}\\src\\dv_tests.log",
         }
     ]
 }
