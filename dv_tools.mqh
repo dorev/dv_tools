@@ -10,9 +10,12 @@
 #define DV_EA_VERSION                      "0.0.0.0"
 #endif
 
+// Pip multiplier depending on digits
+#define PipFactor ((bool)(_Digits & 1) ? 10 : 1)
+
 // Trades config
 #ifndef DV_MAX_PIP_SLIPPAGE
-#define DV_MAX_PIP_SLIPPAGE             5
+#define DV_MAX_PIP_SLIPPAGE             (5 * PipFactor)
 #endif
 #ifndef DV_MAX_ORDER_SEND_RETRY
 #define DV_MAX_ORDER_SEND_RETRY         3
@@ -89,7 +92,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 0
 #define DV_PATCH 2
-#define DV_BUILD 21
+#define DV_BUILD 33
 
 string dv_version()
 {
@@ -190,9 +193,9 @@ const int MagicNumber = MathAbs((scramble(_Symbol)    << 16) |
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-// Pip adjustment
 
-const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
+// Pip adjustment
+const double Pt = PipFactor * _Point;
 
 // Defining a macro to highlight it when reading the code
 #define Pip Pt
@@ -210,7 +213,7 @@ const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
 #ifdef DV_ENABLE_LOG_FILE
     #define LOG_TO_FILE(level, log) if(logger::available()) { logger::print(level, log); }
 #else
-    #define LOG_TO_FILE(level, log)
+    #define LOG_TO_FILE(level, log) ;
 #endif
 
 #ifdef DV_LOG_DEBUG
@@ -223,7 +226,7 @@ const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
     #ifdef DV_LOG_FILE_DEBUG
         #define DEBUG(x) LOG_TO_FILE(DV_DEBUG_TAG, x + FILE_AND_LINE)
     #else
-        #define DEBUG(x)
+        #define DEBUG(x) ;
     #endif
 #endif
 
@@ -237,7 +240,7 @@ const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
     #ifdef DV_LOG_FILE_INFO
         #define INFO(x) LOG_TO_FILE(DV_INFO_TAG, x + FILE_AND_LINE)
     #else
-        #define INFO(x)
+        #define INFO(x) ;
     #endif
 #endif
 
@@ -251,7 +254,7 @@ const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
     #ifdef DV_LOG_FILE_WARNING
         #define WARNING(x) LOG_TO_FILE(DV_WARN_TAG, x + FILE_AND_LINE)
     #else
-        #define WARNING(x)
+        #define WARNING(x) ;
     #endif
 #endif
 
@@ -265,7 +268,7 @@ const double Pt = (bool)(_Digits & 1) ? (_Point * 10) : (_Point);
     #ifdef DV_LOG_FILE_ERROR
         #define ERROR(x) LOG_TO_FILE(DV_ERROR_TAG, x + FILE_AND_LINE)
     #else
-        #define ERROR(x)
+        #define ERROR(x) ;
     #endif
 #endif
 
@@ -2212,6 +2215,244 @@ private:
     bool     _style_changed;
 };
 
+class rectangle_t
+{
+public:
+
+    // Default constructor
+    rectangle_t(
+        string id = NULL,
+        datetime time1 = DV_TIME_ZERO,
+        double price1 = 0.0,
+        datetime time2 = DV_TIME_ZERO,
+        double price2 = 0.0,
+        color clr = DV_DEFAULT_LINE_COLOR,
+        int style = DV_DEFAULT_LINE_STYLE,
+        bool fill = true,
+        bool back = true,
+        int width = DV_DEFAULT_LINE_WIDTH)
+        : _id(id)
+        , _time1(time1)
+        , _time2(time2)
+        , _price1(price1)
+        , _price2(price2)
+        , _clr(clr)
+        , _style(style)
+        , _fill(fill)
+        , _back(back)
+        , _width(width)
+        , _corners_changed(true)
+        , _style_changed(true)
+    {
+        DEBUG("rectangle_t constructed " + (id == NULL ? "NULL" : _id))
+
+        if(_id == NULL)
+        {
+            WARNING("A rectangle_t was created with NULL id")
+        }
+    }
+
+    // Copy constructor
+    rectangle_t(const rectangle_t& other)
+        : _id(other.get_id())
+        , _time1(other.get_time1())
+        , _time2(other.get_time2())
+        , _price1(other.get_price1())
+        , _price2(other.get_price2())
+        , _clr(other.get_color())
+        , _style(other.get_style())
+        , _fill(other.get_fill())
+        , _back(other.get_back())
+        , _width(other.get_width())
+        , _corners_changed(true)
+        , _style_changed(true)
+    {
+        DEBUG("rectangle_t copy constructed " + _id)
+
+        if(_id == NULL)
+        {
+            WARNING("A rectangle_t was copy-constructed with NULL id")
+        }
+    }
+
+    // Accessors
+
+    inline string   get_id()     const { return _id; }
+    inline color    get_color()  const { return _clr; }
+    inline int      get_style()  const { return _style; }
+    inline int      get_width()  const { return _width; }
+    inline bool     get_fill()   const { return _fill; }
+    inline bool     get_back()   const { return _back; }
+    inline datetime get_time1()  const { return _time1; }
+    inline datetime get_time2()  const { return _time2; }
+    inline double   get_price1() const { return _price1; }
+    inline double   get_price2() const { return _price2; }
+
+    inline bool has_changed()   const { return _style_changed || _corners_changed; }
+
+    // Mutators
+
+    rectangle_t* set_color(color clr)
+    {
+        DEBUG("rectangle_t::set_color of " + _id + " with " + ColorToString(clr))
+
+        if(equals(_clr, clr) == false)
+        {
+            _clr = clr;
+            _style_changed = true;
+        }
+
+        return &this;
+    }
+
+    rectangle_t* set_style(int style)
+    {
+        DEBUG("rectangle_t::set_style of " + _id + " with " + style)
+
+        if(equals(_style, style) == false)
+        {
+            _style = style;
+            _style_changed = true;
+        }
+
+        return &this;
+    }
+
+    rectangle_t* set_width(int width)
+    {
+        DEBUG("rectangle_t::set_width of " + _id + " with " + width)
+
+        if(equals(_width, width) == false)
+        {
+            _width = width;
+            _style_changed = true;
+        }
+
+        return &this;
+    }
+
+    rectangle_t* set_fill(bool fill)
+    {
+        DEBUG("rectangle_t::set_fill of " + _id + " with " + (fill ? "true" : "false"))
+
+        if(fill != _fill)
+        {
+            _fill = fill;
+            _style_changed = true;
+        }
+
+        return &this;
+    }
+
+    rectangle_t* set_back(bool back)
+    {
+        DEBUG("rectangle_t::set_back of " + _id + " with " + (back ? "true" : "false"))
+
+        if(back != _back)
+        {
+            _back = back;
+            _style_changed = true;
+        }
+
+        return &this;
+    }
+
+    rectangle_t* set_corners(datetime time1, double price1, datetime time2, double price2)
+    {
+        DEBUG("rectangle_t::set_corners of " + _id)
+
+        if (!(equals(_time1, time1) &&
+            equals(_time2, time2) &&
+            equals(_price1, price1) &&
+            equals(_price2, price2)))
+        {
+            _time1 = time1;
+            _time2 = time2;
+            _price1 = price1;
+            _price2 = price2;
+            _corners_changed = true;
+        }
+
+        return &this;
+    }
+
+    void update()
+    {
+        DEBUG("rectangle_t::update of " + _id)
+
+        if(_corners_changed)
+        {
+            if (! (ObjectSetInteger(0, _id, OBJPROP_TIME1, _time1) &&
+                   ObjectSetInteger(0, _id, OBJPROP_TIME2, _time2) &&
+                   ObjectSetDouble(0, _id, OBJPROP_PRICE1, _price1) &&
+                   ObjectSetDouble(0, _id, OBJPROP_PRICE2, _price2))
+               )
+            {
+                WARNING("Unable to edit corners of rectangle '" + _id + "'")
+            }
+        }
+
+        if(_style_changed)
+        {
+
+            if(!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
+            {
+                WARNING("Unable to edit color of rectangle '" + _id + "'")
+            }
+
+            if(!ObjectSetInteger(0, _id, OBJPROP_STYLE, _style))
+            {
+                WARNING("Unable to edit font of rectangle '" + _id + "'")
+            }
+
+            if(!ObjectSetInteger(0, _id, OBJPROP_WIDTH, _width))
+            {
+                WARNING("Unable to edit size of rectanglee '" + _id + "'")
+            }
+
+            if(!ObjectSetInteger(0, _id, OBJPROP_FILL, _fill))
+            {
+                WARNING("Unable to edit fill property of rectangle '" + _id + "'")
+            }
+
+            if(!ObjectSetInteger(0, _id, OBJPROP_BACK, _back))
+            {
+                WARNING("Unable to edit back property of rectangle '" + _id + "'")
+            }
+        }
+
+        clear_flags();
+    }
+
+private:
+
+    // Private utilities
+
+    void clear_flags()
+    {
+        DEBUG("rectangle_t::clear_flags " + _id)
+
+        _style_changed = false;
+        _corners_changed = false;
+    }
+
+    // Members
+
+    string   _id;
+    double   _price1;
+    double   _price2;
+    datetime _time1;
+    datetime _time2;
+    color    _clr;
+    int      _style;
+    int      _width;
+    bool     _fill;
+    bool     _back;
+
+    bool     _style_changed;
+    bool     _corners_changed;
+};
+
 class triangle_t
 {
 public:
@@ -2379,7 +2620,8 @@ private:
 
             ArrayInitialize(data, 0);
 
-            double k1, k2;
+            double k1 = 0.0;
+            double k2 = 0.0;
 
             if((temp = y0 - y1) != 0)
             {
@@ -2754,6 +2996,73 @@ public:
 
     }
 
+    // Rectangle
+
+    bool create_rectangle(
+        string rectangle_name,
+        datetime time1 = DV_TIME_ZERO,
+        double price1  = 0.0,
+        datetime time2 = DV_TIME_ZERO,
+        double price2  = 0.0,
+        color clr     = DV_DEFAULT_LINE_COLOR,
+        int style     = DV_DEFAULT_LINE_STYLE,
+        bool fill     = true,
+        bool back     = true,
+        int width     = DV_DEFAULT_LINE_WIDTH)
+    {
+        DEBUG("ui_manager::create_rectangle " + (rectangle_name == NULL ? "NULL" : rectangle_name))
+
+        if(rectangle_name == NULL)
+        {
+            ERROR("Unable to create vline with NULL id")
+            return false;
+        }
+
+        if(_rectangle_map.contains(rectangle_name))
+        {
+            WARNING("Attempt to re-create vertical line " + rectangle_name + " prevented")
+            return false;
+        }
+
+        if(ObjectCreate(0, rectangle_name, OBJ_RECTANGLE, 0, time1, price1, time2, price2))
+        {
+           ObjectSetInteger(0, rectangle_name, OBJPROP_COLOR, clr);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_STYLE, style);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_FILL, fill);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_WIDTH, width);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_BACK, back);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_SELECTABLE, false);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_SELECTED, false);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_HIDDEN, true);
+           ObjectSetInteger(0, rectangle_name, OBJPROP_ZORDER, 0);
+
+            // Add item to ui_manager lists
+            _rectangle_map.emplace(
+                rectangle_name,
+                rectangle_name,
+                time1,
+                price1,
+                time2,
+                price2,
+                clr,
+                style,
+                fill,
+                back,
+                width);
+        }
+        else
+        {
+            WARNING("Unable to create rectangle " + rectangle_name)
+            return false;
+        }
+
+        update();
+        return true;
+    }
+
+
+
+
     // Edit objects
 
     bool edit_triangle_points(string triangle_name, int x0, int y0, int x1, int y1, int x2, int y2)
@@ -2884,14 +3193,13 @@ public:
             if(clr  != NULL) { label.set_color(clr); }
             if(font != NULL) { label.set_font(font); }
             if(size != NULL) { label.set_size(size); }
+            return true;
         }
         else
         {
             WARNING("Attempt to edit invalid label " + label_name)
             return false;
         }
-
-        return true;
     }
 
     bool delete_label(string label_name)
@@ -2991,6 +3299,37 @@ public:
         return true;
     }
 
+    bool edit_rectangle_style(string rectangle_name, color clr = NULL, int style = NULL, int width = NULL)
+    {
+        DEBUG("ui_namager::edit_rectangle_style " + rectangle_name)
+
+        if(!_rectangle_map.contains(rectangle_name))
+        {
+            WARNING("Attempt to edit invalid rectangle " + rectangle_name)
+            return false;
+        }
+
+        if(clr != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_COLOR, clr))
+        {
+            WARNING("Unable to edit color of rectangle '" + rectangle_name + "'")
+            return false;
+        }
+
+        if(style != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_STYLE, style))
+        {
+            WARNING("Unable to edit font of rectangle '" + rectangle_name + "'")
+            return false;
+        }
+
+        if(width != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_WIDTH, width))
+        {
+            WARNING("Unable to edit size of rectangle '" + rectangle_name + "'")
+            return false;
+        }
+
+        return true;
+    }
+
     bool move_hline(string hline_name, double price)
     {
         DEBUG("ui_namager::move_hline " + hline_name)
@@ -3049,6 +3388,45 @@ public:
         }
     }
 
+    bool delete_rectangle(string rectangle_name)
+    {
+        DEBUG("ui_namager::delete_rectangle " + rectangle_name)
+
+        if(_rectangle_map.contains(rectangle_name) == false)
+        {
+            WARNING("Attempt to delete inexistant rectangle " + rectangle_name + " prevented")
+            return false;
+        }
+
+        if(ObjectDelete(0, rectangle_name))
+        {
+            _rectangle_map.erase(rectangle_name);
+            return true;
+        }
+        else
+        {
+            WARNING("Unable to delete rectangle " + rectangle_name)
+            return false;
+        }
+    }
+
+    bool edit_rectangle_corners(string rectangle_name, datetime time1, double price1, datetime time2, double price2)
+    {
+        DEBUG("ui_namager::edit_rectangle_corners " + rectangle_name)
+
+        rectangle_t* rectangle = NULL;
+        if(_rectangle_map.access(rectangle_name, rectangle))
+        {
+            rectangle.set_corners(time1, price1, time2, price2);
+            return true;
+        }
+        else
+        {
+            WARNING("Attempt to edit inexistant rectangle " + rectangle_name + " prevented")
+            return false;
+        }
+    }
+
     void update()
     {
         DEBUG("ui_namager::update")
@@ -3077,6 +3455,13 @@ public:
         for(i = 0; i < keys.size(); ++i)
         {
             process<vline_t>(keys.get(i), _vline_map);
+        }
+
+        // Check vertical lines
+        keys = _rectangle_map.get_keys_ref();
+        for(i = 0; i < keys.size(); ++i)
+        {
+            process<rectangle_t>(keys.get(i), _rectangle_map);
         }
 
         // Check triangles
@@ -3150,6 +3535,7 @@ private:
     inline class_map<string, hline_t>* get_map_by_type(hline_t*) { return &_hline_map; }
     inline class_map<string, vline_t>* get_map_by_type(vline_t*) { return &_vline_map; }
     inline class_map<string, triangle_t>* get_map_by_type(triangle_t*) { return &_triangle_map; }
+    inline class_map<string, rectangle_t>* get_map_by_type(rectangle_t*) { return &_rectangle_map; }
 
     // Members
 
@@ -3157,6 +3543,7 @@ private:
     class_map<string, label_t> _label_map;
     class_map<string, hline_t> _hline_map;
     class_map<string, vline_t> _vline_map;
+    class_map<string, rectangle_t> _rectangle_map;
 };
 
 int dv_row(int y)
@@ -3206,7 +3593,7 @@ public:
     // Update all order values
     bool update()
     {
-        DEBUG("order_t::update on order " + _ticket)
+        DEBUG("order_t::update on order " + IntegerToString(_ticket))
 
         if(_ticket == NULL)
         {
@@ -3216,7 +3603,7 @@ public:
 
         if(!OrderSelect(_ticket, SELECT_BY_TICKET))
         {
-            ERROR("Unable to find ticket " + _ticket)
+            ERROR("Unable to find ticket " + IntegerToString(_ticket))
             return false;
         }
 
@@ -3235,8 +3622,13 @@ public:
         return true;
     }
 
-    bool close(double slippage = DV_MAX_PIP_SLIPPAGE)
+    bool close(int slippage = NULL)
     {
+        if(slippage == NULL)
+        {
+            slippage = DV_MAX_PIP_SLIPPAGE;
+        }
+
         DEBUG("closing order " + _ticket + " with slippage " + slippage)
 
         double price = is_sell() ? Ask : Bid;
@@ -3246,13 +3638,18 @@ public:
             return true;
         }
 
-        ERROR("Unable to close order " + _ticket)
+        ERROR("Unable to close order " + IntegerToString(_ticket))
         return false;
     }
 
-    bool close_partial(double lots, double slippage = DV_MAX_PIP_SLIPPAGE)
+    bool close_partial(double lots, int slippage = NULL)
     {
-        DEBUG("partially closing order " + _ticket + " for " + lots + " lots with slippage " + slippage)
+        if(slippage == NULL)
+        {
+            slippage = DV_MAX_PIP_SLIPPAGE;
+        }
+
+        DEBUG("partially closing order " + IntegerToString(_ticket) + " for " + lots + " lots with slippage " + slippage)
 
         double price = is_sell() ? Ask : Bid;
 
@@ -3262,7 +3659,7 @@ public:
             return true;
         }
 
-        ERROR("Unable to close order " + _ticket)
+        ERROR("Unable to close order " + IntegerToString(_ticket))
         return false;
     }
 
@@ -3312,7 +3709,7 @@ public:
         }
     }
 
-    static int open(int op_type, double lots, double price, double takeprofit = NULL, double stoploss = NULL, string comment = "", double slippage = NULL)
+    static int open(int op_type, double lots, double price, double takeprofit = NULL, double stoploss = NULL, string comment = "", int slippage = NULL)
     {
         bool is_sell = (bool)(op_type & 1);
         double pip_with_sign = is_sell ? -1 * Pip : Pip;
@@ -3329,7 +3726,7 @@ public:
 
         if(slippage == NULL)
         {
-            slippage = DV_MAX_PIP_SLIPPAGE * Pip;
+            slippage = DV_MAX_PIP_SLIPPAGE;
         }
 
         int send_attempts = DV_MAX_ORDER_SEND_RETRY;
