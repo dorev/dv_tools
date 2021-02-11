@@ -3,12 +3,14 @@ $sources = @(
     "dv_config.mqh"
     "dv_version.mqh"
     "dv_logger.mqh"
+    "dv_candle.mqh"
     "dv_common.mqh"
     "dv_vector.mqh"
     "dv_map.mqh"
     "dv_class_vector.mqh"
     "dv_class_map.mqh"
     "dv_ui_manager.mqh"
+    "dv_order.mqh"
     "dv_order_manager.mqh"
 )
 
@@ -30,7 +32,7 @@ $build_line_regex = "#define DV_BUILD \d+"
 
 foreach($line in Get-Content $version_file)
 {
-    if($line -match $build_line_regex)
+    if ($line -match $build_line_regex)
     {
         $build_number = [int]($line -replace "\D", "") + 1
         break
@@ -53,7 +55,7 @@ foreach ( $source in $sources )
     {
         $total_lines++
 
-        if($line -match "//@START@")
+        if ($line -match "//@START@")
         {
             $accept_lines = 1
             Add-Content -Path $output -Value "///////////////////////////////////////////////////////////////////////////////`n// $source`n"
@@ -64,7 +66,7 @@ foreach ( $source in $sources )
             $accept_lines = 0
         }
 
-        if($accept_lines)
+        if ($accept_lines)
         {
             Add-Content -Path $output -Value $line
             $line_counter++
@@ -73,7 +75,7 @@ foreach ( $source in $sources )
 
     Write-Host "Added $line_counter/$total_lines lines from $source"
 
-    if($accept_lines)
+    if ($accept_lines)
     {
         $accept_lines = 0
         Write-Host "Missing '//@END@' tag in $filepath"

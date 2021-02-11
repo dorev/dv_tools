@@ -13,7 +13,7 @@ public:
 
     static bool init()
     {
-        if(_log_file_path == "")
+        if (_log_file_path == "")
         {
             // Default log file path
             _log_file_path = "dv_logger_" + _Symbol + "_" + timestamp() + ".log";
@@ -31,7 +31,7 @@ public:
 
     static void print(string tag, string message)
     {
-        if(!_is_init && !init())
+        if (!_is_init && !init())
         {
             return;
         }

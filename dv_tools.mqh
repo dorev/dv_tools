@@ -92,7 +92,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 0
 #define DV_PATCH 2
-#define DV_BUILD 33
+#define DV_BUILD 41
 
 string dv_version()
 {
@@ -116,7 +116,7 @@ public:
 
     static bool init()
     {
-        if(_log_file_path == "")
+        if (_log_file_path == "")
         {
             // Default log file path
             _log_file_path = "dv_logger_" + _Symbol + "_" + timestamp() + ".log";
@@ -134,7 +134,7 @@ public:
 
     static void print(string tag, string message)
     {
-        if(!_is_init && !init())
+        if (!_is_init && !init())
         {
             return;
         }
@@ -163,6 +163,63 @@ private:
 string  logger::_log_file_path      = "";
 bool    logger::_is_init            = false;
 int     logger::_log_file_handle    = INVALID_HANDLE;
+
+///////////////////////////////////////////////////////////////////////////////
+// dv_candle.mqh
+
+
+class candle_t
+{
+
+public:
+
+    bool is_bull;
+    bool is_bear;
+    double open;
+    double high;
+    double low;
+    double close;
+    double half;
+    double body_top;
+    double body_buttom;
+    double body_size;
+    double total_size;
+    datetime time;
+    int timeframe;
+
+    candle_t(string symbol = NULL, int timeframe_ = 0, int shift = 0)
+    {
+        timeframe = timeframe_;
+        if (timeframe == PERIOD_CURRENT)
+        {
+            timeframe = Period();
+        }
+
+        time    = iTime(symbol, timeframe_, shift);
+        open    = iOpen(symbol, timeframe_, shift);
+        high    = iHigh(symbol, timeframe_, shift);
+        low     = iLow(symbol, timeframe_, shift);
+        close   = iClose(symbol, timeframe_, shift);
+        is_bull = open < close;
+        is_bear = !is_bull;
+        total_size = high - low;
+
+        if (is_bull)
+        {
+            half = close - ((close - open) / 2);
+            body_top = close;
+            body_buttom = open;
+        }
+        else
+        {
+            half = open  - ((open - close) / 2);
+            body_top = open;
+            body_buttom = close;
+        }
+
+        body_size = body_top - body_buttom;
+    }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // dv_common.mqh
@@ -211,7 +268,7 @@ const double Pt = PipFactor * _Point;
 #define DV_ERROR_TAG    "[ERROR] " + logger::timestamp()
 
 #ifdef DV_ENABLE_LOG_FILE
-    #define LOG_TO_FILE(level, log) if(logger::available()) { logger::print(level, log); }
+    #define LOG_TO_FILE(level, log) if (logger::available()) { logger::print(level, log); }
 #else
     #define LOG_TO_FILE(level, log) ;
 #endif
@@ -318,9 +375,9 @@ bool    _discard_b_ = false;
 
 // Convenience macro to iterate over orders
 int __order__ = 0;
-#define FOR_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
-#define FOR_ALL_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES)) { continue; }
-#define FOR_HISTORY for(__order__ = OrdersHistoryTotal() - 1; __order__ >= 0 ; --__order__){ if(!OrderSelect(__order__, SELECT_BY_POS, MODE_HISTORY) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
+#define FOR_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if (!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
+#define FOR_ALL_TRADES  for(__order__ = OrdersTotal() - 1; __order__ >= 0 ; --__order__){ if (!OrderSelect(__order__, SELECT_BY_POS, MODE_TRADES)) { continue; }
+#define FOR_HISTORY for(__order__ = OrdersHistoryTotal() - 1; __order__ >= 0 ; --__order__){ if (!OrderSelect(__order__, SELECT_BY_POS, MODE_HISTORY) || MagicNumber != OrderMagicNumber() || OrderSymbol() != _Symbol) { continue; }
 #define ORDER_INDEX __order__
 #define FOR_TRADES_END }
 #define FOR_HISTORY_END }
@@ -331,7 +388,7 @@ int __order__ = 0;
 template <typename CLASS_TYPE>
 void safe_delete(CLASS_TYPE* object)
 {
-    if(object != NULL)
+    if (object != NULL)
     {
         delete object;
         object = NULL;
@@ -341,7 +398,7 @@ void safe_delete(CLASS_TYPE* object)
 template <typename CLASS_TYPE>
 void safe_delete_array(CLASS_TYPE* object)
 {
-    if(object != NULL)
+    if (object != NULL)
     {
         delete[] object;
         object = NULL;
@@ -400,7 +457,7 @@ public:
     // Get a copy of the value at the specified index
     VALUE_TYPE get(int index) const
     {
-        if(bad_index(index))
+        if (bad_index(index))
         {
             WARNING("Accessing an invalid vector index")
         }
@@ -442,7 +499,7 @@ public:
     // Changes the value of a vector index with a value passed by reference
     vector<VALUE_TYPE>* set(int index, VALUE_TYPE value)
     {
-        if(bad_index(index))
+        if (bad_index(index))
         {
             WARNING("Attempt to set an invalid index of vector prevented")
         }
@@ -454,7 +511,7 @@ public:
     // Changes the value of a vector index with a value passed by copy
     vector<VALUE_TYPE>* set(const int& index, const VALUE_TYPE& value)
     {
-        if(bad_index(index))
+        if (bad_index(index))
         {
             WARNING("Attempt to set an invalid index of vector prevented")
         }
@@ -466,12 +523,12 @@ public:
     // Grows the underlying data array and fills the empty slots with NULL
     vector<VALUE_TYPE>* reserve(int reserve_size)
     {
-        if(reserve_size < 0)
+        if (reserve_size < 0)
         {
             WARNING("Attempt to reserve a negative amount of data prevented")
         }
 
-        if(reserve_size > _capacity)
+        if (reserve_size > _capacity)
         {
             resize(reserve_size);
             fill(_size, _capacity - _size);
@@ -482,14 +539,14 @@ public:
     // Fills a certain amount of the specified value starting at the specified offset
     vector<VALUE_TYPE>* fill(int offset, int count, VALUE_TYPE value = NULL)
     {
-        if(count > (_capacity - offset))
+        if (count > (_capacity - offset))
         {
             count =_capacity - offset;
             WARNING("Overfilling of vector prevented")
         }
 
         // Adjust values to also fill indices between _size and offset
-        if(offset > _size)
+        if (offset > _size)
         {
             count += offset - _size;
             offset = _size;
@@ -508,14 +565,14 @@ public:
     // Fills a certain amount of the reffered value starting at the specified offset
     vector<VALUE_TYPE>* fill(int offset, int count, const VALUE_TYPE& value)
     {
-        if(count > (_capacity - offset))
+        if (count > (_capacity - offset))
         {
             count =_capacity - offset;
             WARNING("Overfilling of vector prevented")
         }
 
         // Adjust values to also fill indices between _size and offset
-        if(offset > _size)
+        if (offset > _size)
         {
             count += offset - _size;
             offset = _size;
@@ -557,7 +614,7 @@ public:
     // vector underlying data contiguous
     bool erase(int index)
     {
-        if(bad_index(index))
+        if (bad_index(index))
         {
             WARNING("Attempt to erase an invalid index prevented")
             return false;
@@ -579,7 +636,7 @@ public:
     {
         _size = 0;
 
-        if(reset_reserve)
+        if (reset_reserve)
         {
             resize(DV_DEFAULT_CONTAINER_RESERVE);
         }
@@ -593,7 +650,7 @@ public:
     {
         _capacity = ArrayResize(_data, new_size);
 
-        if(_capacity < _size)
+        if (_capacity < _size)
         {
             _size = _capacity;
             WARNING("Data erased from vector when resizing")
@@ -608,7 +665,7 @@ public:
     {
         for(int i = 0; i < _size; ++i)
         {
-            if(equals(_data[i], value))
+            if (equals(_data[i], value))
             {
                 return i;
             }
@@ -633,7 +690,7 @@ private:
         {
             reserve(_capacity * 2);
 
-            if(!--panic)
+            if (!--panic)
             {
                 WARNING("CRITICAL : vector size/capacity overflow");
                 break;
@@ -687,7 +744,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             DEBUG("map::set created key/value pair " + key + "/" + value)
             // Create key
@@ -711,7 +768,7 @@ public:
 
         int index = _keys.find(key);
 
-        if(index < 0)
+        if (index < 0)
         {
             WARNING("get() called for non-existent key");
         }
@@ -727,7 +784,7 @@ public:
 
         int index = _keys.find(key);
 
-        if(index < 0)
+        if (index < 0)
         {
             WARNING("get() called for non-existent key")
         }
@@ -756,7 +813,7 @@ public:
 
         int index = _keys.find(key);
 
-        if(index >= 0)
+        if (index >= 0)
         {
             DEBUG("map::erase removed key " + key)
             _keys.erase(index);
@@ -775,12 +832,12 @@ public:
     {
         DEBUG("map::reserve called with " + reserve_size)
 
-        if(reserve_size < 0)
+        if (reserve_size < 0)
         {
             WARNING("Attempt to reserve a negative amount of data prevented")
         }
 
-        if(reserve_size > _keys.capacity())
+        if (reserve_size > _keys.capacity())
         {
             _keys.reserve(reserve_size);
             _values.reserve(reserve_size);
@@ -795,12 +852,12 @@ public:
     {
         DEBUG("map::resize called with " + new_size)
 
-        if(new_size < 0)
+        if (new_size < 0)
         {
             WARNING("Attempt to resize to a negative value prevented")
         }
 
-        if(_keys.size() < new_size)
+        if (_keys.size() < new_size)
         {
 
             _keys.resize(new_size);
@@ -918,12 +975,27 @@ public:
     {
         DEBUG("class_vector::get_ref for index " + index)
 
-        if(bad_index(index))
+        if (bad_index(index))
         {
             WARNING("Attempt to access an invalid index")
         }
 
         return _classes[index];
+    }
+
+    bool access(int index, CLASS_TYPE*& output)
+    {
+        DEBUG("class_vector::access on index " + index)
+
+        if (index < 0)
+        {
+            DEBUG("class_vector::access return false for index " + index)
+            return false;
+        }
+
+        DEBUG("class_vector::access return true for index " + index)
+        output = get_ref(index);
+        return true;
     }
 
     // Mutators
@@ -1055,13 +1127,13 @@ public:
     {
         DEBUG("class_vector::erase on index " + index)
 
-        if(bad_index(index))
+        if (bad_index(index))
         {
             WARNING("Attempt to erase an invalid index prevented")
             return false;
         }
 
-        if(_classes[index] == NULL)
+        if (_classes[index] == NULL)
         {
             WARNING("Attempt to erase an NULL object prevented")
         }
@@ -1091,7 +1163,7 @@ public:
             safe_delete(_classes[i]);
         }
 
-        if(reset_reserve)
+        if (reset_reserve)
         {
             resize(DV_DEFAULT_CONTAINER_RESERVE);
         }
@@ -1105,7 +1177,7 @@ public:
     {
         DEBUG("class_vector::reserve called with " + reserve_size)
 
-        if(reserve_size > _capacity)
+        if (reserve_size > _capacity)
         {
             ArrayResize(_classes, reserve_size);
             _capacity = reserve_size;
@@ -1121,7 +1193,7 @@ public:
 
         _capacity = ArrayResize(_classes, new_size);
 
-        if(_capacity < _size)
+        if (_capacity < _size)
         {
             _size = _capacity;
             WARNING("Data erased from vector when resizing")
@@ -1146,7 +1218,7 @@ private:
         {
             resize(_capacity * 2);
 
-            if(!--panic)
+            if (!--panic)
             {
                 ERROR("class_vector size/capacity overflow");
                 break;
@@ -1202,7 +1274,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1224,7 +1296,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1249,7 +1321,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1274,7 +1346,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1299,7 +1371,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1324,7 +1396,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1349,7 +1421,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1373,7 +1445,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1397,7 +1469,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1421,7 +1493,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1445,7 +1517,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1469,7 +1541,7 @@ public:
         int index = _keys.find(key);
 
         // If the key can't be looked up, create it
-        if(index < 0)
+        if (index < 0)
         {
             // Create key
             _keys.push(key);
@@ -1491,7 +1563,7 @@ public:
 
         const int index = _keys.find(key);
 
-        if(index < 0)
+        if (index < 0)
         {
             DEBUG("class_map::access return false for key " + key)
             return false;
@@ -1509,7 +1581,7 @@ public:
 
         const int index = _keys.find(key);
 
-        if(index < 0)
+        if (index < 0)
         {
             WARNING("get() called for non-existent key");
         }
@@ -1524,7 +1596,7 @@ public:
 
         int index = _keys.find(key);
 
-        if(index < 0)
+        if (index < 0)
         {
             WARNING("get() called for non-existent key")
         }
@@ -1553,7 +1625,7 @@ public:
 
         int index = _keys.find(key);
 
-        if(index >= 0)
+        if (index >= 0)
         {
             DEBUG("class_map::erase removed item at key " + key)
             _keys.erase(index);
@@ -1572,12 +1644,12 @@ public:
     {
         DEBUG("class_map::reserve called with " + reserve_size)
 
-        if(reserve_size < 0)
+        if (reserve_size < 0)
         {
             WARNING("Attempt to reserve a negative amount of data prevented")
         }
 
-        if(reserve_size > _keys.capacity())
+        if (reserve_size > _keys.capacity())
         {
             _keys.reserve(reserve_size);
             _values.reserve(reserve_size);
@@ -1592,12 +1664,12 @@ public:
     {
         DEBUG("class_map::resize called with " + new_size)
 
-        if(new_size < 0)
+        if (new_size < 0)
         {
             WARNING("Attempt to resize to a negative value prevented")
         }
 
-        if(_keys.size() < new_size)
+        if (_keys.size() < new_size)
         {
             _keys.resize(new_size);
             _values.resize(new_size);
@@ -1678,7 +1750,7 @@ public:
     {
         DEBUG("label_t constructed " + (id == NULL ? "NULL" : _id))
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             ERROR("A label_t was created with NULL id")
         }
@@ -1699,7 +1771,7 @@ public:
     {
         DEBUG("label_t copy constructed " + _id)
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             ERROR("A label_t was copy-constructed with NULL id")
         }
@@ -1729,7 +1801,7 @@ public:
     {
         DEBUG("label_t::set_text of " + _id + " with " + text)
 
-        if(equals(_text, text) == false)
+        if (equals(_text, text) == false)
         {
             _text = text;
             _text_changed = true;
@@ -1742,7 +1814,7 @@ public:
     {
         DEBUG("label_t::set_x of " + _id + " with " + x)
 
-        if(equals(_x, x) == false)
+        if (equals(_x, x) == false)
         {
             _x = x;
             _pos_changed = true;
@@ -1755,7 +1827,7 @@ public:
     {
         DEBUG("label_t::set_y of " + _id + " with " + y)
 
-        if(equals(_y, y) == false)
+        if (equals(_y, y) == false)
         {
             _y = y;
             _pos_changed = true;
@@ -1778,7 +1850,7 @@ public:
     {
         DEBUG("label_t::set_color of " + _id + " with " + ColorToString(clr))
 
-        if(equals(_clr, clr) == false)
+        if (equals(_clr, clr) == false)
         {
             _clr = clr;
             _style_changed = true;
@@ -1791,7 +1863,7 @@ public:
     {
         DEBUG("label_t::set_font of " + _id + " with " + font)
 
-        if(equals(_font, font) == false)
+        if (equals(_font, font) == false)
         {
             _font = font;
             _style_changed = true;
@@ -1804,7 +1876,7 @@ public:
     {
         DEBUG("label_t::set_size of " + _id + " with " + size)
 
-        if(equals(_size, size) == false)
+        if (equals(_size, size) == false)
         {
             _size = size;
             _style_changed = true;
@@ -1817,37 +1889,37 @@ public:
     {
         DEBUG("label_t::update of " + _id)
 
-        if(_text_changed && !ObjectSetString(0, _id, OBJPROP_TEXT, _text))
+        if (_text_changed && !ObjectSetString(0, _id, OBJPROP_TEXT, _text))
         {
             WARNING("Unable to edit label '" + _id + "'")
         }
 
-        if(_pos_changed)
+        if (_pos_changed)
         {
-            if(!ObjectSetInteger(0, _id, OBJPROP_XDISTANCE, _x))
+            if (!ObjectSetInteger(0, _id, OBJPROP_XDISTANCE, _x))
             {
                 WARNING("Unable to move object " + _id + " on x axis")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_YDISTANCE, _y))
+            if (!ObjectSetInteger(0, _id, OBJPROP_YDISTANCE, _y))
             {
                 WARNING("Unable to move object " + _id + " on y axis")
             }
         }
 
-        if(_style_changed)
+        if (_style_changed)
         {
-            if(!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
+            if (!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
             {
                 WARNING("Unable to edit color of label '" + _id + "'")
             }
 
-            if(!ObjectSetString(0, _id, OBJPROP_FONT, _font))
+            if (!ObjectSetString(0, _id, OBJPROP_FONT, _font))
             {
                 WARNING("Unable to edit font of label '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_FONTSIZE, _size))
+            if (!ObjectSetInteger(0, _id, OBJPROP_FONTSIZE, _size))
             {
                 WARNING("Unable to edit size of label '" + _id + "'")
             }
@@ -1907,7 +1979,7 @@ public:
     {
         DEBUG("hline_t constructed " + (id == NULL ? "NULL" : _id))
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             ERROR("A hline_t was created with NULL id")
         }
@@ -1925,7 +1997,7 @@ public:
     {
         DEBUG("hline_t copy constructed " + _id)
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             ERROR("A hline_t was copy-constructed with NULL id")
         }
@@ -1947,7 +2019,7 @@ public:
     {
         DEBUG("hline_t::price of " + _id + " with " + price)
 
-        if(equals(_price, price) == false)
+        if (equals(_price, price) == false)
         {
             _price = price;
             _price_changed = true;
@@ -1960,7 +2032,7 @@ public:
     {
         DEBUG("hline_t::set_color of " + _id + " with " + ColorToString(clr))
 
-        if(equals(_clr, clr) == false)
+        if (equals(_clr, clr) == false)
         {
             _clr = clr;
             _style_changed = true;
@@ -1973,7 +2045,7 @@ public:
     {
         DEBUG("hline_t::set_style of " + _id + " with " + style)
 
-        if(equals(_style, style) == false)
+        if (equals(_style, style) == false)
         {
             _style = style;
             _style_changed = true;
@@ -1986,7 +2058,7 @@ public:
     {
         DEBUG("hline_t::set_width of " + _id + " with " + width)
 
-        if(equals(_width, width) == false)
+        if (equals(_width, width) == false)
         {
             _width = width;
             _style_changed = true;
@@ -1999,25 +2071,25 @@ public:
     {
         DEBUG("hline_t::update of " + _id)
 
-        if(_price_changed && !ObjectMove(0, _id, 0, 0, _price))
+        if (_price_changed && !ObjectMove(0, _id, 0, 0, _price))
         {
             WARNING("Unable to move object " + _id + " on y axis")
         }
 
-        if(_style_changed)
+        if (_style_changed)
         {
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
+            if (!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
             {
                 WARNING("Unable to edit color of horizontal line '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_STYLE, _style))
+            if (!ObjectSetInteger(0, _id, OBJPROP_STYLE, _style))
             {
                 WARNING("Unable to edit font of horizontal line '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_WIDTH, _width))
+            if (!ObjectSetInteger(0, _id, OBJPROP_WIDTH, _width))
             {
                 WARNING("Unable to edit size of horizontal line '" + _id + "'")
             }
@@ -2072,7 +2144,7 @@ public:
     {
         DEBUG("vline_t constructed " + (id == NULL ? "NULL" : _id))
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             WARNING("A vline_t was created with NULL id")
         }
@@ -2090,7 +2162,7 @@ public:
     {
         DEBUG("vline_t copy constructed " + _id)
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             WARNING("A vline_t was copy-constructed with NULL id")
         }
@@ -2112,7 +2184,7 @@ public:
     {
         DEBUG("vline_t::set_time of " + _id + " with " + TimeToString(time))
 
-        if(equals(_time, time) == false)
+        if (equals(_time, time) == false)
         {
             _time = time;
             _time_changed = true;
@@ -2125,7 +2197,7 @@ public:
     {
         DEBUG("vline_t::set_color of " + _id + " with " + ColorToString(clr))
 
-        if(equals(_clr, clr) == false)
+        if (equals(_clr, clr) == false)
         {
             _clr = clr;
             _style_changed = true;
@@ -2138,7 +2210,7 @@ public:
     {
         DEBUG("vline_t::set_style of " + _id + " with " + style)
 
-        if(equals(_style, style) == false)
+        if (equals(_style, style) == false)
         {
             _style = style;
             _style_changed = true;
@@ -2151,7 +2223,7 @@ public:
     {
         DEBUG("vline_t::set_width of " + _id + " with " + width)
 
-        if(equals(_width, width) == false)
+        if (equals(_width, width) == false)
         {
             _width = width;
             _style_changed = true;
@@ -2164,25 +2236,25 @@ public:
     {
         DEBUG("vline_t::update of " + _id)
 
-        if(_time_changed && !ObjectMove(0, _id, 0, _time, 0))
+        if (_time_changed && !ObjectMove(0, _id, 0, _time, 0))
         {
             WARNING("Unable to move object " + _id + " on x axis")
         }
 
-        if(_style_changed)
+        if (_style_changed)
         {
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
+            if (!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
             {
                 WARNING("Unable to edit color of horizontal line '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_STYLE, _style))
+            if (!ObjectSetInteger(0, _id, OBJPROP_STYLE, _style))
             {
                 WARNING("Unable to edit font of horizontal line '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_WIDTH, _width))
+            if (!ObjectSetInteger(0, _id, OBJPROP_WIDTH, _width))
             {
                 WARNING("Unable to edit size of horizontal line '" + _id + "'")
             }
@@ -2246,7 +2318,7 @@ public:
     {
         DEBUG("rectangle_t constructed " + (id == NULL ? "NULL" : _id))
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             WARNING("A rectangle_t was created with NULL id")
         }
@@ -2269,7 +2341,7 @@ public:
     {
         DEBUG("rectangle_t copy constructed " + _id)
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             WARNING("A rectangle_t was copy-constructed with NULL id")
         }
@@ -2296,7 +2368,7 @@ public:
     {
         DEBUG("rectangle_t::set_color of " + _id + " with " + ColorToString(clr))
 
-        if(equals(_clr, clr) == false)
+        if (equals(_clr, clr) == false)
         {
             _clr = clr;
             _style_changed = true;
@@ -2309,7 +2381,7 @@ public:
     {
         DEBUG("rectangle_t::set_style of " + _id + " with " + style)
 
-        if(equals(_style, style) == false)
+        if (equals(_style, style) == false)
         {
             _style = style;
             _style_changed = true;
@@ -2322,7 +2394,7 @@ public:
     {
         DEBUG("rectangle_t::set_width of " + _id + " with " + width)
 
-        if(equals(_width, width) == false)
+        if (equals(_width, width) == false)
         {
             _width = width;
             _style_changed = true;
@@ -2335,7 +2407,7 @@ public:
     {
         DEBUG("rectangle_t::set_fill of " + _id + " with " + (fill ? "true" : "false"))
 
-        if(fill != _fill)
+        if (fill != _fill)
         {
             _fill = fill;
             _style_changed = true;
@@ -2348,7 +2420,7 @@ public:
     {
         DEBUG("rectangle_t::set_back of " + _id + " with " + (back ? "true" : "false"))
 
-        if(back != _back)
+        if (back != _back)
         {
             _back = back;
             _style_changed = true;
@@ -2380,7 +2452,7 @@ public:
     {
         DEBUG("rectangle_t::update of " + _id)
 
-        if(_corners_changed)
+        if (_corners_changed)
         {
             if (! (ObjectSetInteger(0, _id, OBJPROP_TIME1, _time1) &&
                    ObjectSetInteger(0, _id, OBJPROP_TIME2, _time2) &&
@@ -2392,30 +2464,30 @@ public:
             }
         }
 
-        if(_style_changed)
+        if (_style_changed)
         {
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
+            if (!ObjectSetInteger(0, _id, OBJPROP_COLOR, _clr))
             {
                 WARNING("Unable to edit color of rectangle '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_STYLE, _style))
+            if (!ObjectSetInteger(0, _id, OBJPROP_STYLE, _style))
             {
                 WARNING("Unable to edit font of rectangle '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_WIDTH, _width))
+            if (!ObjectSetInteger(0, _id, OBJPROP_WIDTH, _width))
             {
                 WARNING("Unable to edit size of rectanglee '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_FILL, _fill))
+            if (!ObjectSetInteger(0, _id, OBJPROP_FILL, _fill))
             {
                 WARNING("Unable to edit fill property of rectangle '" + _id + "'")
             }
 
-            if(!ObjectSetInteger(0, _id, OBJPROP_BACK, _back))
+            if (!ObjectSetInteger(0, _id, OBJPROP_BACK, _back))
             {
                 WARNING("Unable to edit back property of rectangle '" + _id + "'")
             }
@@ -2472,7 +2544,7 @@ public:
     {
         DEBUG("triangle_t constructed " + (id == NULL ? "NULL" : _id))
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             WARNING("A triangle_t was created with NULL id")
         }
@@ -2494,7 +2566,7 @@ public:
     {
         DEBUG("triangle_t copy constructed " + _id)
 
-        if(_id == NULL)
+        if (_id == NULL)
         {
             WARNING("A triangle_t was copy-constructed with NULL id")
         }
@@ -2520,7 +2592,7 @@ public:
     void set_anchors(int x, int y)
     {
         DEBUG("triangle_t::set_anchors of " + _id + " to (" + x + "," + y +")")
-        if(x != _x_anchor || y != _y_anchor)
+        if (x != _x_anchor || y != _y_anchor)
         {
             _x_anchor = x;
             _y_anchor = y;
@@ -2531,7 +2603,7 @@ public:
     void set_color(color clr)
     {
         DEBUG("triangle_t::set_color of " + _id + " with " + ColorToString(clr))
-        if(clr != _clr)
+        if (clr != _clr)
         {
             _clr = clr;
             _has_changed = true;
@@ -2541,7 +2613,7 @@ public:
     void set_points(int x0, int y0, int x1, int y1, int x2, int y2)
     {
         DEBUG("triangle_t::set_points of " + _id + " to (" + x0 + "," + y0 + "," + x1 + "," + y1 + "," + x2  + "," + y2 + ")")
-        if(x0 != _x0 || y0 != _y0 ||
+        if (x0 != _x0 || y0 != _y0 ||
            x1 != _x1 || y1 != _y1 ||
            x2 != _x2 || y2 != _y2)
         {
@@ -2557,7 +2629,7 @@ public:
 
     void update()
     {
-        if(_has_changed && !draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
+        if (_has_changed && !draw_triangle(_x0, _y0, _x1, _y1, _x2, _y2, _clr))
         {
             ERROR("Unable to draw triangle " + _id)
         }
@@ -2588,18 +2660,18 @@ private:
         int height;
 
         // sort by Y
-        if(y0 > y1) { swap(y1, y0); swap(x1, x0); }
-        if(y0 > y2) { swap(y0, y2); swap(x0, x2); }
-        if(y1 > y2) { swap(y1, y2); swap(x1, x2); }
+        if (y0 > y1) { swap(y1, y0); swap(x1, x0); }
+        if (y0 > y2) { swap(y0, y2); swap(x0, x2); }
+        if (y1 > y2) { swap(y1, y2); swap(x1, x2); }
 
         // min/max by X
         int min_x = MathMin(x0, MathMin(x1, x2));
         int max_x = MathMax(x0, MathMax(x1, x2));
 
         // invisible
-        if(y2 < 0 || max_x < 0)
+        if (y2 < 0 || max_x < 0)
         {
-            if(ArrayResize(data, 1) < 0)
+            if (ArrayResize(data, 1) < 0)
             {
                 return false;
             }
@@ -2613,7 +2685,7 @@ private:
             width = max_x + 1;
             height = y2 + 1;
 
-            if(ArrayResize(data, width * height) < 0)
+            if (ArrayResize(data, width * height) < 0)
             {
                 return false;
             }
@@ -2623,12 +2695,12 @@ private:
             double k1 = 0.0;
             double k2 = 0.0;
 
-            if((temp = y0 - y1) != 0)
+            if ((temp = y0 - y1) != 0)
             {
                 k1 = (x0 - x1) / (double)temp;
             }
 
-            if((temp = y0 - y2) != 0)
+            if ((temp = y0 - y2) != 0)
             {
                 k2 = (x0 - x2) / (double)temp;
             }
@@ -2638,9 +2710,9 @@ private:
 
             for(int i = y0, xx1, xx2; i <= y2; i++)
             {
-                if(i == y1)
+                if (i == y1)
                 {
-                    if((temp = y1 - y2) != 0)
+                    if ((temp = y1 - y2) != 0)
                     {
                         k1 = (x1 - x2) / (double)temp;
                     }
@@ -2652,21 +2724,21 @@ private:
                 xx2 = (int)xd2;
                 xd2 += k2;
 
-                if(i < 0) continue;
+                if (i < 0) continue;
 
-                if(xx1 > xx2)
+                if (xx1 > xx2)
                 {
                     swap(xx1, xx2);
                 }
 
-                if(xx2 < 0 || xx1 >= width) continue;
+                if (xx2 < 0 || xx1 >= width) continue;
 
-                if(xx1 < 0)
+                if (xx1 < 0)
                 {
                     xx1 = 0;
                 }
 
-                if(xx2 >= width)
+                if (xx2 >= width)
                 {
                     xx2 = width - 1;
                 }
@@ -2680,7 +2752,7 @@ private:
             }
         }
 
-        if(!ResourceCreate(resource_name, data, width, height, 0, 0, 0, COLOR_FORMAT_ARGB_RAW))
+        if (!ResourceCreate(resource_name, data, width, height, 0, 0, 0, COLOR_FORMAT_ARGB_RAW))
         {
             return false;
         }
@@ -2716,7 +2788,7 @@ public:
         DEBUG("ui_manager constructed")
 
         int objects_cleared = ObjectsDeleteAll(0);
-        if(objects_cleared > 0)
+        if (objects_cleared > 0)
         {
             INFO("Clearing chart 0 of " + objects_cleared + " objects");
         }
@@ -2744,7 +2816,7 @@ public:
     void set_background_color(color clr)
     {
         DEBUG("ui_manager::set_background_color with " + ColorToString(clr))
-        if(!ChartSetInteger(0, CHART_COLOR_BACKGROUND, clr))
+        if (!ChartSetInteger(0, CHART_COLOR_BACKGROUND, clr))
         {
             ERROR("Unable to set background color to " + ColorToString(clr))
         }
@@ -2753,7 +2825,7 @@ public:
     void set_axis_color(color clr)
     {
         DEBUG("ui_manager::set_axis_color with " + ColorToString(clr))
-        if(!ChartSetInteger(0, CHART_COLOR_FOREGROUND, clr))
+        if (!ChartSetInteger(0, CHART_COLOR_FOREGROUND, clr))
         {
             ERROR("Unable to set axis color to " + ColorToString(clr))
         }
@@ -2762,7 +2834,7 @@ public:
     void set_grid_color(color clr)
     {
         DEBUG("ui_manager::set_grid_color with " + ColorToString(clr))
-        if(!ChartSetInteger(0, CHART_COLOR_GRID, clr))
+        if (!ChartSetInteger(0, CHART_COLOR_GRID, clr))
         {
             ERROR("Unable to set grid color to " + ColorToString(clr))
         }
@@ -2783,19 +2855,19 @@ public:
     {
         DEBUG("ui_manager::create_triangle " + (triangle_name == NULL ? "NULL" : triangle_name))
 
-        if(triangle_name == NULL)
+        if (triangle_name == NULL)
         {
             ERROR("Unable to create triangle with NULL id")
             return false;
         }
 
-        if(_triangle_map.contains(triangle_name))
+        if (_triangle_map.contains(triangle_name))
         {
             WARNING("Attempt to re-create triangle " + triangle_name + " prevented")
             return false;
         }
 
-        if(ObjectCreate(0, triangle_name, OBJ_BITMAP_LABEL, 0, 0, 0))
+        if (ObjectCreate(0, triangle_name, OBJ_BITMAP_LABEL, 0, 0, 0))
         {
             // Add item to ui_manager lists
             _triangle_map.emplace(
@@ -2835,19 +2907,19 @@ public:
     {
         DEBUG("ui_manager::create_label " + (label_name == NULL ? "NULL" : label_name))
 
-        if(label_name == NULL)
+        if (label_name == NULL)
         {
             ERROR("Unable to create label with NULL id")
             return false;
         }
 
-        if(_label_map.contains(label_name))
+        if (_label_map.contains(label_name))
         {
             WARNING("Attempt to re-create label " + label_name + " prevented")
             return false;
         }
 
-        if(ObjectCreate(0, label_name, OBJ_LABEL, 0, 0, 0))
+        if (ObjectCreate(0, label_name, OBJ_LABEL, 0, 0, 0))
         {
             // Parameters
             ObjectSetInteger (0, label_name, OBJPROP_XDISTANCE, x);
@@ -2899,19 +2971,19 @@ public:
     {
         DEBUG("ui_manager::create_line " + (hline_name == NULL ? "NULL" : hline_name))
 
-        if(hline_name == NULL)
+        if (hline_name == NULL)
         {
             ERROR("Unable to create hline with NULL id")
             return false;
         }
 
-        if(_hline_map.contains(hline_name))
+        if (_hline_map.contains(hline_name))
         {
             WARNING("Attempt to re-create horizontal line " + hline_name + " prevented")
             return false;
         }
 
-        if(ObjectCreate(0, hline_name, OBJ_HLINE, 0, 0, price))
+        if (ObjectCreate(0, hline_name, OBJ_HLINE, 0, 0, price))
         {
            ObjectSetInteger(0, hline_name, OBJPROP_COLOR, clr);
            ObjectSetInteger(0, hline_name, OBJPROP_STYLE, style);
@@ -2953,19 +3025,19 @@ public:
     {
         DEBUG("ui_manager::create_vline " + (vline_name == NULL ? "NULL" : vline_name))
 
-        if(vline_name == NULL)
+        if (vline_name == NULL)
         {
             ERROR("Unable to create vline with NULL id")
             return false;
         }
 
-        if(_vline_map.contains(vline_name))
+        if (_vline_map.contains(vline_name))
         {
             WARNING("Attempt to re-create vertical line " + vline_name + " prevented")
             return false;
         }
 
-        if(ObjectCreate(0, vline_name, OBJ_VLINE, 0, time, 0))
+        if (ObjectCreate(0, vline_name, OBJ_VLINE, 0, time, 0))
         {
            ObjectSetInteger(0, vline_name, OBJPROP_COLOR, clr);
            ObjectSetInteger(0, vline_name, OBJPROP_STYLE, style);
@@ -3012,19 +3084,19 @@ public:
     {
         DEBUG("ui_manager::create_rectangle " + (rectangle_name == NULL ? "NULL" : rectangle_name))
 
-        if(rectangle_name == NULL)
+        if (rectangle_name == NULL)
         {
-            ERROR("Unable to create vline with NULL id")
+            ERROR("Unable to create rectangle with NULL id")
             return false;
         }
 
-        if(_rectangle_map.contains(rectangle_name))
+        if (_rectangle_map.contains(rectangle_name))
         {
-            WARNING("Attempt to re-create vertical line " + rectangle_name + " prevented")
+            WARNING("Attempt to re-create rectangle " + rectangle_name + " prevented")
             return false;
         }
 
-        if(ObjectCreate(0, rectangle_name, OBJ_RECTANGLE, 0, time1, price1, time2, price2))
+        if (ObjectCreate(0, rectangle_name, OBJ_RECTANGLE, 0, time1, price1, time2, price2))
         {
            ObjectSetInteger(0, rectangle_name, OBJPROP_COLOR, clr);
            ObjectSetInteger(0, rectangle_name, OBJPROP_STYLE, style);
@@ -3071,7 +3143,7 @@ public:
 
         triangle_t* triangle = NULL;
 
-        if(_triangle_map.access(triangle_name, triangle))
+        if (_triangle_map.access(triangle_name, triangle))
         {
             triangle.set_points(x0, y0, x1, y1, x2, y2);
         }
@@ -3090,7 +3162,7 @@ public:
 
         triangle_t* triangle = NULL;
 
-        if(_triangle_map.access(triangle_name, triangle))
+        if (_triangle_map.access(triangle_name, triangle))
         {
             triangle.set_color(clr);
         }
@@ -3109,7 +3181,7 @@ public:
 
         triangle_t* triangle = NULL;
 
-        if(_triangle_map.access(triangle_name, triangle))
+        if (_triangle_map.access(triangle_name, triangle))
         {
             triangle.set_anchors(x, y);
         }
@@ -3126,13 +3198,13 @@ public:
     {
         DEBUG("ui_namager::delete_triangle " + triangle_name)
 
-        if(_triangle_map.contains(triangle_name) == false)
+        if (_triangle_map.contains(triangle_name) == false)
         {
             WARNING("Attempt to delete inexistant triangle " + triangle_name + " prevented")
             return false;
         }
 
-        if(ObjectDelete(0, triangle_name))
+        if (ObjectDelete(0, triangle_name))
         {
             _triangle_map.erase(triangle_name);
             return true;
@@ -3150,7 +3222,7 @@ public:
 
         label_t* label = NULL;
 
-        if(_label_map.access(label_name, label))
+        if (_label_map.access(label_name, label))
         {
             label.set_text(text);
         }
@@ -3169,7 +3241,7 @@ public:
 
         label_t* label = NULL;
 
-        if(_label_map.access(label_name, label))
+        if (_label_map.access(label_name, label))
         {
             label.set_xy(x, y);
         }
@@ -3188,11 +3260,11 @@ public:
 
         label_t* label = NULL;
 
-        if(_label_map.access(label_name, label))
+        if (_label_map.access(label_name, label))
         {
-            if(clr  != NULL) { label.set_color(clr); }
-            if(font != NULL) { label.set_font(font); }
-            if(size != NULL) { label.set_size(size); }
+            if (clr  != NULL) { label.set_color(clr); }
+            if (font != NULL) { label.set_font(font); }
+            if (size != NULL) { label.set_size(size); }
             return true;
         }
         else
@@ -3206,13 +3278,13 @@ public:
     {
         DEBUG("ui_namager::delete_label " + label_name)
 
-        if(_label_map.contains(label_name) == false)
+        if (_label_map.contains(label_name) == false)
         {
             WARNING("Attempt to delete inexistant label " + label_name + " prevented")
             return false;
         }
 
-        if(ObjectDelete(0, label_name))
+        if (ObjectDelete(0, label_name))
         {
             _label_map.erase(label_name);
             return true;
@@ -3241,25 +3313,25 @@ public:
     {
         DEBUG("ui_namager::edit_hline_style " + hline_name)
 
-        if(!_hline_map.contains(hline_name))
+        if (!_hline_map.contains(hline_name))
         {
             WARNING("Attempt to edit invalid horizontal line " + hline_name)
             return false;
         }
 
-        if(clr != NULL && !ObjectSetInteger(0, hline_name, OBJPROP_COLOR, clr))
+        if (clr != NULL && !ObjectSetInteger(0, hline_name, OBJPROP_COLOR, clr))
         {
             WARNING("Unable to edit color of horizontal line '" + hline_name + "'")
             return false;
         }
 
-        if(style != NULL && !ObjectSetInteger(0, hline_name, OBJPROP_STYLE, style))
+        if (style != NULL && !ObjectSetInteger(0, hline_name, OBJPROP_STYLE, style))
         {
             WARNING("Unable to edit font of horizontal line '" + hline_name + "'")
             return false;
         }
 
-        if(width != NULL && !ObjectSetInteger(0, hline_name, OBJPROP_WIDTH, width))
+        if (width != NULL && !ObjectSetInteger(0, hline_name, OBJPROP_WIDTH, width))
         {
             WARNING("Unable to edit size of horizontal line '" + hline_name + "'")
             return false;
@@ -3272,25 +3344,25 @@ public:
     {
         DEBUG("ui_namager::edit_vline_style " + vline_name)
 
-        if(!_vline_map.contains(vline_name))
+        if (!_vline_map.contains(vline_name))
         {
             WARNING("Attempt to edit invalid vertical line " + vline_name)
             return false;
         }
 
-        if(clr != NULL && !ObjectSetInteger(0, vline_name, OBJPROP_COLOR, clr))
+        if (clr != NULL && !ObjectSetInteger(0, vline_name, OBJPROP_COLOR, clr))
         {
             WARNING("Unable to edit color of vertical line '" + vline_name + "'")
             return false;
         }
 
-        if(style != NULL && !ObjectSetInteger(0, vline_name, OBJPROP_STYLE, style))
+        if (style != NULL && !ObjectSetInteger(0, vline_name, OBJPROP_STYLE, style))
         {
             WARNING("Unable to edit font of vertical line '" + vline_name + "'")
             return false;
         }
 
-        if(width != NULL && !ObjectSetInteger(0, vline_name, OBJPROP_WIDTH, width))
+        if (width != NULL && !ObjectSetInteger(0, vline_name, OBJPROP_WIDTH, width))
         {
             WARNING("Unable to edit size of vertical line '" + vline_name + "'")
             return false;
@@ -3303,25 +3375,25 @@ public:
     {
         DEBUG("ui_namager::edit_rectangle_style " + rectangle_name)
 
-        if(!_rectangle_map.contains(rectangle_name))
+        if (!_rectangle_map.contains(rectangle_name))
         {
             WARNING("Attempt to edit invalid rectangle " + rectangle_name)
             return false;
         }
 
-        if(clr != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_COLOR, clr))
+        if (clr != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_COLOR, clr))
         {
             WARNING("Unable to edit color of rectangle '" + rectangle_name + "'")
             return false;
         }
 
-        if(style != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_STYLE, style))
+        if (style != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_STYLE, style))
         {
             WARNING("Unable to edit font of rectangle '" + rectangle_name + "'")
             return false;
         }
 
-        if(width != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_WIDTH, width))
+        if (width != NULL && !ObjectSetInteger(0, rectangle_name, OBJPROP_WIDTH, width))
         {
             WARNING("Unable to edit size of rectangle '" + rectangle_name + "'")
             return false;
@@ -3348,13 +3420,13 @@ public:
     {
         DEBUG("ui_namager::delete_hline " + hline_name)
 
-        if(_hline_map.contains(hline_name) == false)
+        if (_hline_map.contains(hline_name) == false)
         {
             WARNING("Attempt to delete inexistant horizontal line " + hline_name + " prevented")
             return false;
         }
 
-        if(ObjectDelete(0, hline_name))
+        if (ObjectDelete(0, hline_name))
         {
             _hline_map.erase(hline_name);
             return true;
@@ -3370,13 +3442,13 @@ public:
     {
         DEBUG("ui_namager::delete_vline " + vline_name)
 
-        if(_vline_map.contains(vline_name) == false)
+        if (_vline_map.contains(vline_name) == false)
         {
             WARNING("Attempt to delete inexistant vertical line " + vline_name + " prevented")
             return false;
         }
 
-        if(ObjectDelete(0, vline_name))
+        if (ObjectDelete(0, vline_name))
         {
             _vline_map.erase(vline_name);
             return true;
@@ -3392,13 +3464,13 @@ public:
     {
         DEBUG("ui_namager::delete_rectangle " + rectangle_name)
 
-        if(_rectangle_map.contains(rectangle_name) == false)
+        if (_rectangle_map.contains(rectangle_name) == false)
         {
             WARNING("Attempt to delete inexistant rectangle " + rectangle_name + " prevented")
             return false;
         }
 
-        if(ObjectDelete(0, rectangle_name))
+        if (ObjectDelete(0, rectangle_name))
         {
             _rectangle_map.erase(rectangle_name);
             return true;
@@ -3415,7 +3487,7 @@ public:
         DEBUG("ui_namager::edit_rectangle_corners " + rectangle_name)
 
         rectangle_t* rectangle = NULL;
-        if(_rectangle_map.access(rectangle_name, rectangle))
+        if (_rectangle_map.access(rectangle_name, rectangle))
         {
             rectangle.set_corners(time1, price1, time2, price2);
             return true;
@@ -3502,13 +3574,13 @@ private:
     template<typename X_TYPE, typename Y_TYPE>
     bool move_item(string object_name, X_TYPE x = NULL, Y_TYPE y = NULL)
     {
-        if(x != NULL && !ObjectSetInteger(0, object_name, OBJPROP_XDISTANCE, (long)x))
+        if (x != NULL && !ObjectSetInteger(0, object_name, OBJPROP_XDISTANCE, (long)x))
         {
             WARNING("Unable to move object " + object_name + " on x axis")
             return false;
         }
 
-        if(y != NULL && !ObjectSetInteger(0, object_name, OBJPROP_YDISTANCE, (long)y))
+        if (y != NULL && !ObjectSetInteger(0, object_name, OBJPROP_YDISTANCE, (long)y))
         {
             WARNING("Unable to move object " + object_name + " on y axis")
             return false;
@@ -3523,7 +3595,7 @@ private:
         DEBUG("ui_namager::process " + ui_object_name)
 
         UI_OBJECT* ui_object = NULL;
-        if( ui_map.access(ui_object_name, ui_object) &&
+        if ( ui_map.access(ui_object_name, ui_object) &&
             ui_object != NULL                        &&
             ui_object.has_changed())
         {
@@ -3557,7 +3629,7 @@ int dv_col(int x)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// dv_order_manager.mqh
+// dv_order.mqh
 
 #ifdef __MQL4__ // order and order_manager not implemented for MT5
 
@@ -3566,7 +3638,9 @@ class order_t
 public:
 
     // Default constructor
-    order_t(int ticket = NULL) : _ticket(ticket)
+    order_t(int ticket = NULL)
+        : _ticket(ticket)
+        , _trailing_stop(0)
     {
         DEBUG("order_t constructed with ticket " + (ticket == NULL ? "NULL" : ticket))
         update();
@@ -3583,9 +3657,10 @@ public:
         , _open_time(other.get_open_time())
         , _close_price(other.get_close_price())
         , _close_time(other.get_close_time())
-        , _take_profit(other.get_take_profit())
-        , _stop_loss(other.get_stop_loss())
+        , _takeprofit(other.get_takeprofit())
+        , _stoploss(other.get_stoploss())
         , _profit(other.get_profit())
+        , _trailing_stop(other.get_trailing_stop())
     {
         DEBUG("order_t copy constructor")
     }
@@ -3595,16 +3670,28 @@ public:
     {
         DEBUG("order_t::update on order " + IntegerToString(_ticket))
 
-        if(_ticket == NULL)
+        if (_ticket == NULL)
         {
             WARNING("Order created with NULL ticket")
             return false;
         }
 
-        if(!OrderSelect(_ticket, SELECT_BY_TICKET))
+        if (!OrderSelect(_ticket, SELECT_BY_TICKET))
         {
             ERROR("Unable to find ticket " + IntegerToString(_ticket))
             return false;
+        }
+
+        if (!is_closed() && _trailing_stop != 0)
+        {
+            if (is_buy() && (Bid - _trailing_stop) > OrderStopLoss())
+            {
+                change_stoploss(Bid - _trailing_stop);
+            }
+            else if (is_sell() && (Ask + _trailing_stop) < OrderStopLoss())
+            {
+                change_stoploss(Ask + _trailing_stop);
+            }
         }
 
         _symbol         = OrderSymbol();
@@ -3615,16 +3702,21 @@ public:
         _open_time      = OrderOpenTime();
         _close_price    = OrderOpenPrice();
         _close_time     = OrderOpenTime();
-        _take_profit    = OrderTakeProfit();
-        _stop_loss      = OrderStopLoss();
+        _takeprofit     = OrderTakeProfit();
+        _stoploss       = OrderStopLoss();
         _profit         = OrderProfit();
 
         return true;
     }
 
+    void set_trailing_stop(int trailing_stop_pip)
+    {
+        _trailing_stop = trailing_stop_pip * Pip;
+    }
+
     bool close(int slippage = NULL)
     {
-        if(slippage == NULL)
+        if (slippage == NULL)
         {
             slippage = DV_MAX_PIP_SLIPPAGE;
         }
@@ -3633,7 +3725,7 @@ public:
 
         double price = is_sell() ? Ask : Bid;
 
-        if(OrderClose(_ticket, _lots, price, slippage))
+        if (OrderClose(_ticket, _lots, price, slippage))
         {
             return true;
         }
@@ -3644,7 +3736,7 @@ public:
 
     bool close_partial(double lots, int slippage = NULL)
     {
-        if(slippage == NULL)
+        if (slippage == NULL)
         {
             slippage = DV_MAX_PIP_SLIPPAGE;
         }
@@ -3653,7 +3745,7 @@ public:
 
         double price = is_sell() ? Ask : Bid;
 
-        if(OrderClose(_ticket, lots, price, slippage))
+        if (OrderClose(_ticket, lots, price, slippage))
         {
             update();
             return true;
@@ -3661,6 +3753,32 @@ public:
 
         ERROR("Unable to close order " + IntegerToString(_ticket))
         return false;
+    }
+
+    int change_stoploss(double new_stoploss_value)
+    {
+        update();
+
+        ResetLastError();
+        if (!OrderModify(_ticket, _open_price, new_stoploss_value, _takeprofit, 0))
+        {
+            return GetLastError();
+        }
+
+        return 0;
+    }
+
+    int change_takeprofit(double new_takeprofit_value)
+    {
+        update();
+
+        ResetLastError();
+        if (!OrderModify(_ticket, _open_price, _stoploss, new_takeprofit_value, 0))
+        {
+            return GetLastError();
+        }
+
+        return 0;
     }
 
     inline bool is(int ticket) const
@@ -3679,7 +3797,7 @@ public:
     // Returns true if the order is closed
     static bool is_closed(int ticket)
     {
-        if(OrderSelect(ticket, SELECT_BY_TICKET))
+        if (OrderSelect(ticket, SELECT_BY_TICKET))
         {
             return OrderCloseTime() > 0;
         }
@@ -3709,22 +3827,29 @@ public:
         }
     }
 
-    static int open(int op_type, double lots, double price, double takeprofit = NULL, double stoploss = NULL, string comment = "", int slippage = NULL)
+    static int open(
+        int op_type,
+        double lots,
+        double price,
+        double takeprofit = NULL,
+        double stoploss = NULL,
+        string comment = "",
+        int slippage = NULL)
     {
         bool is_sell = (bool)(op_type & 1);
         double pip_with_sign = is_sell ? -1 * Pip : Pip;
 
-        if(takeprofit == NULL)
+        if (takeprofit == NULL)
         {
             takeprofit = price + (DV_DEFAULT_TAKEPROFIT * pip_with_sign);
         }
 
-        if(stoploss == NULL)
+        if (stoploss == NULL)
         {
             stoploss = price - (DV_DEFAULT_STOPLOSS * pip_with_sign);
         }
 
-        if(slippage == NULL)
+        if (slippage == NULL)
         {
             slippage = DV_MAX_PIP_SLIPPAGE;
         }
@@ -3751,7 +3876,7 @@ public:
                 clrAzure
             );
 
-            if(ticket < 0 && send_attempts > 0)
+            if (ticket < 0 && send_attempts > 0)
             {
                 int error = GetLastError();
                 WARNING("Unable to send " + type_to_string(op_type) + " order (error " + error + ") retrying...")
@@ -3763,7 +3888,7 @@ public:
             }
         }
 
-        if(ticket > 0)
+        if (ticket >= 0)
         {
             INFO("Opened new " + type_to_string(op_type) + " order " + ticket)
         }
@@ -3786,19 +3911,20 @@ public:
         return !is_sell();
     }
 
-    inline int         get_ticket()       const { return _ticket; }
-    inline string      get_symbol()       const { return _symbol; }
-    inline int         get_magic_number() const { return _magic_number; }
-    inline int         get_type()         const { return _type; }
-    inline double      get_lots()         const { return _lots; }
-    inline double      get_open_price()   const { return _open_price; }
-    inline datetime    get_open_time()    const { return _open_time; }
-    inline double      get_close_price()  const { return _close_price; }
-    inline datetime    get_close_time()   const { return _close_time; }
-    inline datetime    get_expiration()   const { return _expiration; }
-    inline double      get_take_profit()  const { return _take_profit; }
-    inline double      get_stop_loss()    const { return _stop_loss; }
-    inline double      get_profit()       const { return _profit; }
+    inline int         get_ticket()         const { return _ticket; }
+    inline string      get_symbol()         const { return _symbol; }
+    inline int         get_magic_number()   const { return _magic_number; }
+    inline int         get_type()           const { return _type; }
+    inline double      get_lots()           const { return _lots; }
+    inline double      get_open_price()     const { return _open_price; }
+    inline datetime    get_open_time()      const { return _open_time; }
+    inline double      get_close_price()    const { return _close_price; }
+    inline datetime    get_close_time()     const { return _close_time; }
+    inline datetime    get_expiration()     const { return _expiration; }
+    inline double      get_takeprofit()     const { return _takeprofit; }
+    inline double      get_stoploss()       const { return _stoploss; }
+    inline double      get_profit()         const { return _profit; }
+    inline double      get_trailing_stop()  const { return _trailing_stop; }
 
 private:
 
@@ -3814,12 +3940,18 @@ private:
     double      _close_price;
     datetime    _close_time;
     datetime    _expiration;
-    double      _take_profit;
-    double      _stop_loss;
+    double      _takeprofit;
+    double      _stoploss;
     double      _profit;
+    double      _trailing_stop;
 };
 
+#endif // __MQL4__
+
 ///////////////////////////////////////////////////////////////////////////////
+// dv_order_manager.mqh
+
+#ifdef __MQL4__ // order and order_manager not implemented for MT5
 
 class order_manager
 {
@@ -3841,7 +3973,7 @@ public:
 
         _track_history = track_history;
 
-        if(!_track_history)
+        if (!_track_history)
         {
             DEBUG("Clearing order_manager history")
             _new_closed.clear();
@@ -3850,14 +3982,48 @@ public:
         }
     }
 
+    order_t* open_order(
+        int op_type,
+        double lots,
+        double price,
+        double takeprofit = NULL,
+        double stoploss = NULL,
+        int trailing_stop_pip = 0,
+        string comment = "",
+        int slippage = NULL)
+    {
+        int ticket = order_t::open(op_type, lots, price, takeprofit, stoploss, comment, slippage);
+
+        if(ticket < 0)
+        {
+            // Error already thrown by order_t::open
+            return NULL;
+        }
+
+        refresh();
+
+        order_t* new_order = get_ticket(ticket);
+
+        if(new_order == NULL)
+        {
+            ERROR("Order manager unable to reach ticket " + IntegerToString(ticket));
+            return NULL;
+        }
+
+        new_order.set_trailing_stop(trailing_stop_pip);
+        new_order.update();
+
+        return new_order;
+    }
+
     order_t* get_ticket(int ticket)
     {
-        if(_opened.contains(ticket))
+        if (_opened.contains(ticket))
         {
             return _opened.get_ref(ticket);
         }
         
-        if(_closed.contains(ticket))
+        if (_closed.contains(ticket))
         {
             return _closed.get_ref(ticket);
         }
@@ -3878,23 +4044,23 @@ public:
             ticket = OrderTicket();
             DEBUG("order_manager::refresh processing ticket " + ticket + "...")
 
-            if(_opened.access(ticket, order_ref))
+            if (_opened.access(ticket, order_ref))
             {
                 DEBUG("order_manager::refresh detected opened ticket " + ticket)
                 order_ref.update();
             }
-            else if(_track_history && _closed.access(ticket, order_ref))
+            else if (_track_history && _closed.access(ticket, order_ref))
             {
                 WARNING("Unlikely detection of closed order " + ticket)
                 order_ref.update();
 
-                if(!order_ref.is_closed())
+                if (!order_ref.is_closed())
                 {
                     _opened.emplace(ticket, order_ref);
                     _closed.erase(ticket);
                 }
             }
-            else if(_track_history && _archived.find(ticket) >= 0)
+            else if (_track_history && _archived.find(ticket) >= 0)
             {
                 // do nothing
                 DEBUG("order_manager::refresh discovered archived ticket " + ticket)
@@ -3906,23 +4072,23 @@ public:
             }
         FOR_TRADES_END
 
-        if(_track_history)
+        if (_track_history)
         {
             FOR_HISTORY
                 ticket = OrderTicket();
 
-                if(_closed.access(ticket, order_ref))
+                if (_closed.access(ticket, order_ref))
                 {
                     order_ref.update();
                 }
-                else if(_archived.find(ticket) >= 0)
+                else if (_archived.find(ticket) >= 0)
                 {
                     // do nothing
                 }
                 else
                 {
                     // Add "old" tickets to archive at least to map them
-                    if(order_t::is_closed(ticket))
+                    if (order_t::is_closed(ticket))
                     {
                         _archived.push(ticket);
                         DEBUG("Untracked closed order added to order_manager archive")
@@ -3942,13 +4108,13 @@ public:
         {
             ticket = opened_tickets.get(i);
 
-            if(order_t::is_closed(ticket))
+            if (order_t::is_closed(ticket))
             {
                 DEBUG("Detected new closed order " + ticket)
 
-                if(_opened.access(ticket, order_ref))
+                if (_opened.access(ticket, order_ref))
                 {
-                    if(_track_history)
+                    if (_track_history)
                     {
                         order_ref.update();
                         _new_closed.push(ticket);
@@ -3981,7 +4147,7 @@ public:
 
         for(int i = 0; i < keys.size(); ++i)
         {
-            if(_opened.access(keys.get(i), order))
+            if (_opened.access(keys.get(i), order))
             {
                 order.close();
             }
@@ -4003,7 +4169,7 @@ public:
         {
             int current_ticket = keys.get(i);
 
-            if(_opened.access(current_ticket, order) && !order.is(ticket_to_keep))
+            if (_opened.access(current_ticket, order) && !order.is(ticket_to_keep))
             {
                 INFO("Closing ticket " + current_ticket)
                 order.close();
@@ -4017,16 +4183,16 @@ public:
     // and sets the function parameter with its reference
     bool access_new_closed(order_t*& output)
     {
-        if(!_track_history)
+        if (!_track_history)
         {
             return false;
         }
 
         DEBUG("order_manager::new_closed_orders")
 
-        if(_new_closed.size() > 0)
+        if (_new_closed.size() > 0)
         {
-            if(_closed.access(_new_closed.get(0), output))
+            if (_closed.access(_new_closed.get(0), output))
             {
                 _new_closed.erase(0);
                 return true;
@@ -4051,7 +4217,7 @@ public:
 
     void archive(int ticket)
     {
-        if(!_track_history)
+        if (!_track_history)
         {
             return;
         }
@@ -4060,25 +4226,25 @@ public:
 
         bool add_to_archive = false;
 
-        if(_opened.contains(ticket))
+        if (_opened.contains(ticket))
         {
             _opened.erase(ticket);
             add_to_archive = true;
         }
 
-        if(_closed.contains(ticket))
+        if (_closed.contains(ticket))
         {
             _closed.erase(ticket);
             add_to_archive = true;
         }
 
         int index = _new_closed.find(ticket);
-        if(index > -1)
+        if (index > -1)
         {
             _new_closed.erase(index);
         }
 
-        if(add_to_archive)
+        if (add_to_archive)
         {
             _archived.push(ticket);
         }
@@ -4086,7 +4252,7 @@ public:
 
     void archive_closed_orders()
     {
-        if(!_track_history)
+        if (!_track_history)
         {
             return;
         }
@@ -4106,7 +4272,7 @@ public:
 
     void clear_archive()
     {
-        if(!_track_history)
+        if (!_track_history)
         {
             return;
         }
@@ -4150,13 +4316,13 @@ private:
     {
         INFO("Adding order " + ticket)
 
-        if(!order_t::exists(ticket))
+        if (!order_t::exists(ticket))
         {
             WARNING("Attempt to add a non-existent ticket prevented")
             return false;
         }
 
-        if(_track_history && order_t::is_closed(ticket))
+        if (_track_history && order_t::is_closed(ticket))
         {
             DEBUG("Adding order " + ticket + " to closed orders")
             _closed.emplace(ticket, ticket);

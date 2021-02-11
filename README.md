@@ -65,7 +65,7 @@ cm.emplace("one", 1);           // { {"one", &my_obj{num:1}} }
 cm.get_ref("one").num;          // returns 1
 
 my_obj* cm_dest;
-if(cm.access("one", cm_dest))   // true if key "one" valid
+if (cm.access("one", cm_dest))   // true if key "one" valid
     cm_dest.num;                // returns 1
 
 cm.emplace("two", 2);
@@ -84,7 +84,7 @@ ui_manager ui;
 ui.create_label("archon", "power overwheling", ui.col(2), ui.row(4));
 
 label_t* label;
-if(ui.access("archon", label))
+if (ui.access("archon", label))
     label.set_font("Comic Sans MS")     // builder pattern on ui objects
          .set_color(clrPurple)
          .set_size(72)
@@ -104,11 +104,11 @@ order_manager orders;
 orders.refresh();                           // scan existing orders
 order_t* order;                             // declare a receiving order pointer
 
-if(orders.new_closed_orders())              // check if any order was recently closed
+if (orders.new_closed_orders())              // check if any order was recently closed
 {
-    if(orders.access_new_closed(order))     // "access_..." methods are provided with
+    if (orders.access_new_closed(order))     // "access_..." methods are provided with
     {                                       // a destination pointerand return true if
-        if(order.get_profit() < 0)          // an object has been referenced
+        if (order.get_profit() < 0)          // an object has been referenced
         {
             // order was recently closed with losses
         }
@@ -144,9 +144,9 @@ Iterating on all trades is quite tiresome to write in MQL4, so this was probably
 ```cpp
 FOR_TRADES
     order_t order = orders.get_ticket(OrderTicket());
-    if(order == NULL) { continue; }
+    if (order == NULL) { continue; }
 
-    if(order.is_buy() && order.get_profit() > 0)
+    if (order.is_buy() && order.get_profit() > 0)
         order.close_partial(order.get_lots() / 2.0);
 FOR_TRADES_END
 ```
