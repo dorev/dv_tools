@@ -92,7 +92,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 0
 #define DV_PATCH 2
-#define DV_BUILD 41
+#define DV_BUILD 44
 
 string dv_version()
 {
@@ -3712,6 +3712,30 @@ public:
     void set_trailing_stop(int trailing_stop_pip)
     {
         _trailing_stop = trailing_stop_pip * Pip;
+        update();
+    }
+
+    void set_breakeven()
+    {
+        if(OrderSelect(_ticket, SELECT_BY_TICKET))
+        {
+            double breakeven_buffer = OrderSwap() + OrderCommission() + Pip;
+
+            if(is_buy())
+            {
+                change_stoploss(_open_price + breakeven_buffer);
+            }
+            else
+            {
+                change_stoploss(_open_price - breakeven_buffer);
+            }
+
+            update();
+        }
+        else
+        {
+            ERROR("Unable to set breakeven for order " + IntegerToString(_ticket));
+        }
     }
 
     bool close(int slippage = NULL)
