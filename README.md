@@ -130,7 +130,7 @@ Four macros: `DEBUG`, `INFO`, `WARNING` and `ERROR` that can be individually tog
 //...
 
 DEBUG("foo::bar(int a) called with a=" + a)     // prints nothing, nowhere
-WARNING("No baz was found")                     // prints message to console and log file 
+WARNING("No baz was found")                     // prints message to console and log file
 ```
 
 ### Other macro utils

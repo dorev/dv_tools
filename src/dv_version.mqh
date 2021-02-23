@@ -5,7 +5,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 1
 #define DV_PATCH 0
-#define DV_BUILD 1
+#define DV_BUILD 4
 
 string dv_version()
 {

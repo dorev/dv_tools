@@ -92,7 +92,7 @@
 #define DV_MAJOR 1
 #define DV_MINOR 1
 #define DV_PATCH 0
-#define DV_BUILD 1
+#define DV_BUILD 4
 
 string dv_version()
 {
@@ -2795,11 +2795,15 @@ public:
         {
             INFO("Clearing chart 0 of " + objects_cleared + " objects");
         }
-        
+
+        init_tick();
+    }
+
+    void init_default()
+    {
         set_background_color(DV_DEFAULT_BG_COLOR);
         set_axis_color(DV_DEFAULT_AXIS_COLOR);
         set_grid_color(DV_DEFAULT_GRID_COLOR);
-        init_tick();
     }
 
     ~ui_manager()
@@ -3657,7 +3661,7 @@ public:
         return true;
     }
 
-    void enable_trailing_stop(int trailing_stop_pip)
+    void set_trailing_stop(int trailing_stop_pip)
     {
         _trailing_stop_value = trailing_stop_pip * Pip;
     }
@@ -3677,7 +3681,7 @@ public:
         }
     }
 
-    void enable_breakeven(int breakeven_threshold_pip)
+    void set_breakeven(int breakeven_threshold_pip)
     {
         if(OrderSelect(_ticket, SELECT_BY_TICKET))
         {
@@ -3739,6 +3743,7 @@ public:
 
         double price = is_sell() ? Ask : Bid;
 
+        RefreshRates();
         if (OrderClose(_ticket, _lots, price, slippage))
         {
             return true;
@@ -3759,6 +3764,7 @@ public:
 
         double price = is_sell() ? Ask : Bid;
 
+        RefreshRates();
         if (OrderClose(_ticket, lots, price, slippage))
         {
             update();
@@ -3772,6 +3778,7 @@ public:
     int change_stoploss(double new_stoploss_value)
     {
         ResetLastError();
+        RefreshRates();
         if (!OrderModify(_ticket, _open_price, new_stoploss_value, _takeprofit, 0))
         {
             global_last_error = GetLastError();
@@ -3786,6 +3793,7 @@ public:
         update();
 
         ResetLastError();
+        RefreshRates();
         if (!OrderModify(_ticket, _open_price, _stoploss, new_takeprofit_value, 0))
         {
             global_last_error = GetLastError();
@@ -3875,6 +3883,7 @@ public:
 
         while((bool)send_attempts--)
         {
+            RefreshRates();
             ResetLastError();
             ticket = OrderSend(
                 _Symbol,
@@ -4029,8 +4038,8 @@ public:
             return NULL;
         }
 
-        new_order.enable_trailing_stop(trailing_stop_pip);
-        new_order.enable_breakeven(breakeven_pip);
+        new_order.set_trailing_stop(trailing_stop_pip);
+        new_order.set_breakeven(breakeven_pip);
         new_order.update();
 
         return new_order;
@@ -4042,7 +4051,7 @@ public:
         {
             return _opened.get_ref(ticket);
         }
-        
+
         if (_closed.contains(ticket))
         {
             return _closed.get_ref(ticket);
