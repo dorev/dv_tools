@@ -35,10 +35,10 @@
 
 // Log to file
 //#define DV_ENABLE_LOG_FILE
-#define DV_LOG_FILE_DEBUG
-#define DV_LOG_FILE_INFO
-#define DV_LOG_FILE_WARNING
-#define DV_LOG_FILE_ERROR
+//#define DV_LOG_FILE_DEBUG
+//#define DV_LOG_FILE_INFO
+//#define DV_LOG_FILE_WARNING
+//#define DV_LOG_FILE_ERROR
 
 // Label default values
 #ifndef DV_DEFAULT_LABEL_COLOR
@@ -90,9 +90,9 @@
 // dv_version.mqh
 
 #define DV_MAJOR 1
-#define DV_MINOR 0
-#define DV_PATCH 2
-#define DV_BUILD 44
+#define DV_MINOR 1
+#define DV_PATCH 0
+#define DV_BUILD 1
 
 string dv_version()
 {
@@ -250,6 +250,9 @@ const int MagicNumber = MathAbs((scramble(_Symbol)    << 16) |
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
+
+// Global value for LastError
+int global_last_error = 0;
 
 // Pip adjustment
 const double Pt = PipFactor * _Point;
@@ -1874,7 +1877,7 @@ public:
 
     label_t* set_size(int size)
     {
-        DEBUG("label_t::set_size of " + _id + " with " + size)
+        DEBUG("label_t::set_size of " + _id + " with " + IntegerToString(size))
 
         if (equals(_size, size) == false)
         {
@@ -2056,7 +2059,7 @@ public:
 
     hline_t* set_width(int width)
     {
-        DEBUG("hline_t::set_width of " + _id + " with " + width)
+        DEBUG("hline_t::set_width of " + _id + " with " + IntegerToString(width))
 
         if (equals(_width, width) == false)
         {
@@ -2221,7 +2224,7 @@ public:
 
     vline_t* set_width(int width)
     {
-        DEBUG("vline_t::set_width of " + _id + " with " + width)
+        DEBUG("vline_t::set_width of " + _id + " with " + IntegerToString(width))
 
         if (equals(_width, width) == false)
         {
@@ -2392,7 +2395,7 @@ public:
 
     rectangle_t* set_width(int width)
     {
-        DEBUG("rectangle_t::set_width of " + _id + " with " + width)
+        DEBUG("rectangle_t::set_width of " + _id + " with " + IntegerToString(width))
 
         if (equals(_width, width) == false)
         {
@@ -3132,9 +3135,6 @@ public:
         return true;
     }
 
-
-
-
     // Edit objects
 
     bool edit_triangle_points(string triangle_name, int x0, int y0, int x1, int y1, int x2, int y2)
@@ -3194,28 +3194,6 @@ public:
         return true;
     }
 
-    bool delete_triangle(string triangle_name)
-    {
-        DEBUG("ui_namager::delete_triangle " + triangle_name)
-
-        if (_triangle_map.contains(triangle_name) == false)
-        {
-            WARNING("Attempt to delete inexistant triangle " + triangle_name + " prevented")
-            return false;
-        }
-
-        if (ObjectDelete(0, triangle_name))
-        {
-            _triangle_map.erase(triangle_name);
-            return true;
-        }
-        else
-        {
-            WARNING("Unable to delete triangle " + triangle_name)
-            return false;
-        }
-    }
-
     bool edit_label_text(string label_name, string text)
     {
         DEBUG("ui_namager::edit_label_text " + label_name)
@@ -3270,28 +3248,6 @@ public:
         else
         {
             WARNING("Attempt to edit invalid label " + label_name)
-            return false;
-        }
-    }
-
-    bool delete_label(string label_name)
-    {
-        DEBUG("ui_namager::delete_label " + label_name)
-
-        if (_label_map.contains(label_name) == false)
-        {
-            WARNING("Attempt to delete inexistant label " + label_name + " prevented")
-            return false;
-        }
-
-        if (ObjectDelete(0, label_name))
-        {
-            _label_map.erase(label_name);
-            return true;
-        }
-        else
-        {
-            WARNING("Unable to delete label " + label_name)
             return false;
         }
     }
@@ -3416,70 +3372,58 @@ public:
         return move_item(vline_name, time, 0);
     }
 
+    bool delete_label(string label_name)
+    {
+        return delete_item(label_name, _label_map);
+    }
+
     bool delete_hline(string hline_name)
     {
-        DEBUG("ui_namager::delete_hline " + hline_name)
-
-        if (_hline_map.contains(hline_name) == false)
-        {
-            WARNING("Attempt to delete inexistant horizontal line " + hline_name + " prevented")
-            return false;
-        }
-
-        if (ObjectDelete(0, hline_name))
-        {
-            _hline_map.erase(hline_name);
-            return true;
-        }
-        else
-        {
-            WARNING("Unable to delete horizontal line " + hline_name)
-            return false;
-        }
+        return delete_item(hline_name, _hline_map);
     }
 
     bool delete_vline(string vline_name)
     {
-        DEBUG("ui_namager::delete_vline " + vline_name)
-
-        if (_vline_map.contains(vline_name) == false)
-        {
-            WARNING("Attempt to delete inexistant vertical line " + vline_name + " prevented")
-            return false;
-        }
-
-        if (ObjectDelete(0, vline_name))
-        {
-            _vline_map.erase(vline_name);
-            return true;
-        }
-        else
-        {
-            WARNING("Unable to delete vertical line " + vline_name)
-            return false;
-        }
+        return delete_item(vline_name, _vline_map);
     }
 
     bool delete_rectangle(string rectangle_name)
     {
-        DEBUG("ui_namager::delete_rectangle " + rectangle_name)
+        return delete_item(rectangle_name, _rectangle_map);
+    }
 
-        if (_rectangle_map.contains(rectangle_name) == false)
-        {
-            WARNING("Attempt to delete inexistant rectangle " + rectangle_name + " prevented")
-            return false;
-        }
+    bool delete_triangle(string triangle_name)
+    {
+        return delete_item(triangle_name, _triangle_map);
+    }
 
-        if (ObjectDelete(0, rectangle_name))
+    template <typename MAP_CLASS>
+    bool delete_item(string name, MAP_CLASS& item_map)
+    {
+        DEBUG("ui_namager::delete_item " + name)
+
+        if(ObjectFind(0, name) < 0)
         {
-            _rectangle_map.erase(rectangle_name);
+            if (item_map.contains(name))
+            {
+                item_map.erase(name);
+            }
+
             return true;
         }
-        else
+
+        if (!ObjectDelete(0, name))
         {
-            WARNING("Unable to delete rectangle " + rectangle_name)
+            WARNING("Unable to delete item " + name)
             return false;
         }
+
+        if (item_map.contains(name))
+        {
+            item_map.erase(name);
+        }
+
+        return true;
     }
 
     bool edit_rectangle_corners(string rectangle_name, datetime time1, double price1, datetime time2, double price2)
@@ -3633,6 +3577,15 @@ int dv_col(int x)
 
 #ifdef __MQL4__ // order and order_manager not implemented for MT5
 
+/*
+
+Usage:
+
+order_t represents the actual order and exposes it commonly used values
+
+*/
+
+
 class order_t
 {
 public:
@@ -3640,7 +3593,9 @@ public:
     // Default constructor
     order_t(int ticket = NULL)
         : _ticket(ticket)
-        , _trailing_stop(0)
+        , _trailing_stop_value(0)
+        , _breakeven_threshold(0)
+        , _breakeven_reached(false)
     {
         DEBUG("order_t constructed with ticket " + (ticket == NULL ? "NULL" : ticket))
         update();
@@ -3660,7 +3615,9 @@ public:
         , _takeprofit(other.get_takeprofit())
         , _stoploss(other.get_stoploss())
         , _profit(other.get_profit())
-        , _trailing_stop(other.get_trailing_stop())
+        , _trailing_stop_value(other.get_trailing_stop())
+        , _breakeven_threshold(other.get_breakeven_threshold())
+        , _breakeven_reached(other.breakeven_reached())
     {
         DEBUG("order_t copy constructor")
     }
@@ -3682,17 +3639,8 @@ public:
             return false;
         }
 
-        if (!is_closed() && _trailing_stop != 0)
-        {
-            if (is_buy() && (Bid - _trailing_stop) > OrderStopLoss())
-            {
-                change_stoploss(Bid - _trailing_stop);
-            }
-            else if (is_sell() && (Ask + _trailing_stop) < OrderStopLoss())
-            {
-                change_stoploss(Ask + _trailing_stop);
-            }
-        }
+        check_breakeven();
+        check_trailing_stop();
 
         _symbol         = OrderSymbol();
         _magic_number   = OrderMagicNumber();
@@ -3709,32 +3657,74 @@ public:
         return true;
     }
 
-    void set_trailing_stop(int trailing_stop_pip)
+    void enable_trailing_stop(int trailing_stop_pip)
     {
-        _trailing_stop = trailing_stop_pip * Pip;
-        update();
+        _trailing_stop_value = trailing_stop_pip * Pip;
     }
 
-    void set_breakeven()
+    void check_trailing_stop()
+    {
+        if (!is_closed() && _trailing_stop_value != 0)
+        {
+            if (is_buy() && (Bid - _trailing_stop_value) > OrderStopLoss())
+            {
+                change_stoploss(Bid - _trailing_stop_value);
+            }
+            else if (is_sell() && (Ask + _trailing_stop_value) < OrderStopLoss())
+            {
+                change_stoploss(Ask + _trailing_stop_value);
+            }
+        }
+    }
+
+    void enable_breakeven(int breakeven_threshold_pip)
     {
         if(OrderSelect(_ticket, SELECT_BY_TICKET))
         {
             double breakeven_buffer = OrderSwap() + OrderCommission() + Pip;
+            double breakeven_value = breakeven_threshold_pip * Pip + breakeven_buffer;
 
             if(is_buy())
             {
-                change_stoploss(_open_price + breakeven_buffer);
+                _breakeven_threshold = _open_price + breakeven_value;
             }
             else
             {
-                change_stoploss(_open_price - breakeven_buffer);
+                _breakeven_threshold = _open_price - breakeven_value;
             }
-
-            update();
         }
         else
         {
-            ERROR("Unable to set breakeven for order " + IntegerToString(_ticket));
+            ERROR("Unable to enable breakeven for order " + IntegerToString(_ticket));
+        }
+    }
+
+    void check_breakeven()
+    {
+        if (!_breakeven_reached &&
+            !is_closed() &&
+            _breakeven_threshold != 0)
+        {
+            double breakeven_buffer = OrderSwap() + OrderCommission() + Pip;
+
+            if (is_buy() &&
+                _open_price > OrderStopLoss() &&
+                Bid > _breakeven_threshold)
+            {
+                change_stoploss(_open_price + breakeven_buffer);
+                _breakeven_reached = true;
+            }
+            else if(is_sell() &&
+                _open_price < OrderStopLoss() &&
+                Ask < _breakeven_threshold)
+            {
+                change_stoploss(_open_price - breakeven_buffer);
+                _breakeven_reached = true;
+            }
+            else
+            {
+                return;
+            }
         }
     }
 
@@ -3781,12 +3771,11 @@ public:
 
     int change_stoploss(double new_stoploss_value)
     {
-        update();
-
         ResetLastError();
         if (!OrderModify(_ticket, _open_price, new_stoploss_value, _takeprofit, 0))
         {
-            return GetLastError();
+            global_last_error = GetLastError();
+            return global_last_error;
         }
 
         return 0;
@@ -3799,7 +3788,8 @@ public:
         ResetLastError();
         if (!OrderModify(_ticket, _open_price, _stoploss, new_takeprofit_value, 0))
         {
-            return GetLastError();
+            global_last_error = GetLastError();
+            return global_last_error;
         }
 
         return 0;
@@ -3902,8 +3892,8 @@ public:
 
             if (ticket < 0 && send_attempts > 0)
             {
-                int error = GetLastError();
-                WARNING("Unable to send " + type_to_string(op_type) + " order (error " + error + ") retrying...")
+                global_last_error = GetLastError();
+                WARNING("Unable to send " + type_to_string(op_type) + " order (error " + IntegerToString(global_last_error) + ") retrying...")
                 Sleep(100);
             }
             else
@@ -3914,7 +3904,7 @@ public:
 
         if (ticket >= 0)
         {
-            INFO("Opened new " + type_to_string(op_type) + " order " + ticket)
+            INFO("Opened new " + type_to_string(op_type) + " order " + IntegerToString(ticket))
         }
         else
         {
@@ -3935,20 +3925,22 @@ public:
         return !is_sell();
     }
 
-    inline int         get_ticket()         const { return _ticket; }
-    inline string      get_symbol()         const { return _symbol; }
-    inline int         get_magic_number()   const { return _magic_number; }
-    inline int         get_type()           const { return _type; }
-    inline double      get_lots()           const { return _lots; }
-    inline double      get_open_price()     const { return _open_price; }
-    inline datetime    get_open_time()      const { return _open_time; }
-    inline double      get_close_price()    const { return _close_price; }
-    inline datetime    get_close_time()     const { return _close_time; }
-    inline datetime    get_expiration()     const { return _expiration; }
-    inline double      get_takeprofit()     const { return _takeprofit; }
-    inline double      get_stoploss()       const { return _stoploss; }
-    inline double      get_profit()         const { return _profit; }
-    inline double      get_trailing_stop()  const { return _trailing_stop; }
+    inline int         get_ticket()                 const { return _ticket; }
+    inline string      get_symbol()                 const { return _symbol; }
+    inline int         get_magic_number()           const { return _magic_number; }
+    inline int         get_type()                   const { return _type; }
+    inline double      get_lots()                   const { return _lots; }
+    inline double      get_open_price()             const { return _open_price; }
+    inline datetime    get_open_time()              const { return _open_time; }
+    inline double      get_close_price()            const { return _close_price; }
+    inline datetime    get_close_time()             const { return _close_time; }
+    inline datetime    get_expiration()             const { return _expiration; }
+    inline double      get_takeprofit()             const { return _takeprofit; }
+    inline double      get_stoploss()               const { return _stoploss; }
+    inline double      get_profit()                 const { return _profit; }
+    inline double      get_trailing_stop()          const { return _trailing_stop_value; }
+    inline double      get_breakeven_threshold()    const { return _breakeven_threshold; }
+    inline bool        breakeven_reached()          const { return _breakeven_reached; }
 
 private:
 
@@ -3967,7 +3959,9 @@ private:
     double      _takeprofit;
     double      _stoploss;
     double      _profit;
-    double      _trailing_stop;
+    double      _trailing_stop_value;
+    double      _breakeven_threshold;
+    bool        _breakeven_reached;
 };
 
 #endif // __MQL4__
@@ -4013,6 +4007,7 @@ public:
         double takeprofit = NULL,
         double stoploss = NULL,
         int trailing_stop_pip = 0,
+        int breakeven_pip = 0,
         string comment = "",
         int slippage = NULL)
     {
@@ -4034,7 +4029,8 @@ public:
             return NULL;
         }
 
-        new_order.set_trailing_stop(trailing_stop_pip);
+        new_order.enable_trailing_stop(trailing_stop_pip);
+        new_order.enable_breakeven(breakeven_pip);
         new_order.update();
 
         return new_order;
@@ -4066,16 +4062,16 @@ public:
         // Scan all open trades and history to validate/update the current content
         FOR_TRADES
             ticket = OrderTicket();
-            DEBUG("order_manager::refresh processing ticket " + ticket + "...")
+            DEBUG("order_manager::refresh processing ticket " + IntegerToString(ticket) + "...")
 
             if (_opened.access(ticket, order_ref))
             {
-                DEBUG("order_manager::refresh detected opened ticket " + ticket)
+                DEBUG("order_manager::refresh detected opened ticket " + IntegerToString(ticket))
                 order_ref.update();
             }
             else if (_track_history && _closed.access(ticket, order_ref))
             {
-                WARNING("Unlikely detection of closed order " + ticket)
+                WARNING("Unlikely detection of closed order " + IntegerToString(ticket))
                 order_ref.update();
 
                 if (!order_ref.is_closed())
@@ -4087,11 +4083,11 @@ public:
             else if (_track_history && _archived.find(ticket) >= 0)
             {
                 // do nothing
-                DEBUG("order_manager::refresh discovered archived ticket " + ticket)
+                DEBUG("order_manager::refresh discovered archived ticket " + IntegerToString(ticket))
             }
             else
             {
-                DEBUG("order_manager::refresh discovered new ticket " + ticket)
+                DEBUG("order_manager::refresh discovered new ticket " + IntegerToString(ticket))
                 add_order(ticket);
             }
         FOR_TRADES_END
@@ -4134,7 +4130,7 @@ public:
 
             if (order_t::is_closed(ticket))
             {
-                DEBUG("Detected new closed order " + ticket)
+                DEBUG("Detected new closed order " + IntegerToString(ticket))
 
                 if (_opened.access(ticket, order_ref))
                 {
@@ -4246,7 +4242,7 @@ public:
             return;
         }
 
-        DEBUG("order_manager::archive ticket " + ticket)
+        DEBUG("order_manager::archive ticket " + IntegerToString(ticket))
 
         bool add_to_archive = false;
 
@@ -4338,7 +4334,7 @@ private:
     // Private because it should not be called manually
     bool add_order(int ticket)
     {
-        INFO("Adding order " + ticket)
+        INFO("Adding order " + IntegerToString(ticket))
 
         if (!order_t::exists(ticket))
         {
@@ -4348,12 +4344,12 @@ private:
 
         if (_track_history && order_t::is_closed(ticket))
         {
-            DEBUG("Adding order " + ticket + " to closed orders")
+            DEBUG("Adding order " + IntegerToString(ticket) + " to closed orders")
             _closed.emplace(ticket, ticket);
         }
         else
         {
-            DEBUG("Adding order " + ticket + " to opened orders")
+            DEBUG("Adding order " + IntegerToString(ticket) + " to opened orders")
             _opened.emplace(ticket, ticket);
         }
 
